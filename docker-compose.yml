@@ -4,11 +4,10 @@ services:
   iam-api-db:
     image: postgres:16.1
     container_name: iam-postgres
-    user: iam
     environment:
       - POSTGRES_DB=iam
-      - POSTGRES_USER=iam
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=iam-password
     ports:
       - "5432:5432"
     healthcheck:
@@ -17,11 +16,10 @@ services:
   keycloak-db:
     image: postgres:16.1
     container_name: keycloak-postgres
-    user: keycloak
     environment:
       - POSTGRES_DB=keycloak
-      - POSTGRES_USER=keycloak
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=keycloak-password
     ports:
       - "5433:5432"
     healthcheck:
@@ -36,13 +34,15 @@ services:
       - KC_DB=postgres
       - KC_DB_URL_HOST=keycloak-postgres
       - KC_DB_URL_DATABASE=keycloak
-      - KC_DB_USERNAME=keycloak
-      - KC_DB_PASSWORD=postgres
+      - KC_DB_USERNAME=postgres
+      - KC_DB_PASSWORD=keycloak-password
       - KC_HEALTH_ENABLED=true
     ports:
       - "8080:8080"
-    command: start-dev
+    command: start-dev --import-realm
     depends_on:
       - keycloak-db
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import
     healthcheck:
       test: "curl -f http://localhost:8080/health/ready || exit 1"
