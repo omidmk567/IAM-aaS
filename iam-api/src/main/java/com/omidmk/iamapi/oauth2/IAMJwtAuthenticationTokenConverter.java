@@ -24,7 +24,7 @@ public class IAMJwtAuthenticationTokenConverter implements Converter<Jwt, Abstra
     private static final JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
     private final UserService userService;
 
-    @Value("${jwt.auth.converter.clients}")
+    @Value("${jwt.authorization.role.converter.clients}")
     private List<String> clientIds;
 
     @Override
