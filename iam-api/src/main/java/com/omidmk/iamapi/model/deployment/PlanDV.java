@@ -11,7 +11,7 @@ public enum PlanDV {
     IMAGINARY("plan.imaginary", 1_000_000, 50, 20, 50, SupportLevelDV.EXPERT, 39_000L),
     ;
 
-    private final String name;
+    private final String title;
     private final Integer usersCount;
     private final Integer clientsCount;
     private final Integer groupsCount;
@@ -19,8 +19,8 @@ public enum PlanDV {
     private final SupportLevelDV defaultSupportLevel;
     private final Long costPerHour;
 
-    PlanDV(String name, Integer usersCount, Integer clientsCount, Integer groupsCount, Integer rolesCount, SupportLevelDV defaultSupportLevel, Long costPerHour) {
-        this.name = name;
+    PlanDV(String title, Integer usersCount, Integer clientsCount, Integer groupsCount, Integer rolesCount, SupportLevelDV defaultSupportLevel, Long costPerHour) {
+        this.title = title;
         this.usersCount = usersCount;
         this.clientsCount = clientsCount;
         this.groupsCount = groupsCount;

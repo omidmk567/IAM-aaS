@@ -12,6 +12,5 @@ public class Deployment {
     private UUID id;
     private String realmName;
     private PlanDV plan;
-    private SupportLevelDV supportLevel;
     private DeploymentModel.State state;
 }

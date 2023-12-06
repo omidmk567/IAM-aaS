@@ -1,6 +1,4 @@
 iam-api: {
-    complete  oauth2 integration,
-    two profiles: dev and prod,
     add to docker compose,
 }
 

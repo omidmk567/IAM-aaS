@@ -21,7 +21,7 @@ public enum SupportLevelDV {
         this.services = services;
     }
 
-    enum Service {
+    public enum Service {
         MAILING_CHANNEL,
         TICKETING_CHANNEL,
         ON_CALLING_CHANNEL,

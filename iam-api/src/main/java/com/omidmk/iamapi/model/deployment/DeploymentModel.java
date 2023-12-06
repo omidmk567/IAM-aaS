@@ -25,9 +25,6 @@ public class DeploymentModel {
     private PlanDV plan;
 
     @Enumerated(EnumType.STRING)
-    private SupportLevelDV supportLevel;
-
-    @Enumerated(EnumType.STRING)
     private State state;
 
     @CreatedDate
