@@ -2,7 +2,7 @@ package com.omidmk.iamapi.service.impl;
 
 import com.omidmk.iamapi.model.user.UserModel;
 import com.omidmk.iamapi.repository.UserRepository;
-import com.omidmk.iamapi.service.UserService;
+import com.omidmk.iamapi.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class CustomerServiceImpl implements CustomerService {
     private final UserRepository userRepository;
 
     public Optional<UserModel> findUserByEmail(String email) {

@@ -1,8 +1,9 @@
 package com.omidmk.iamapi.oauth2;
 
+import com.omidmk.iamapi.mapper.CustomerMapper;
 import com.omidmk.iamapi.model.user.UserModel;
 import com.omidmk.iamapi.oauth2.model.IAMUser;
-import com.omidmk.iamapi.service.UserService;
+import com.omidmk.iamapi.service.CustomerService;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.Transient;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -12,26 +13,23 @@ import java.util.Collection;
 
 @Transient
 public class IAMJwtAuthenticationToken extends JwtAuthenticationToken {
-    private final UserService userService;
+    private final CustomerService customerService;
+    private final CustomerMapper customerMapper;
 
-    public IAMJwtAuthenticationToken(UserService userService, Jwt jwt, Collection<? extends GrantedAuthority> authorities) {
+    public IAMJwtAuthenticationToken(CustomerService customerService, CustomerMapper customerMapper, Jwt jwt, Collection<? extends GrantedAuthority> authorities) {
         super(jwt, authorities, jwt.getClaim("preferred_username"));
-        this.userService = userService;
+        this.customerService = customerService;
+        this.customerMapper = customerMapper;
     }
 
     @Override
     public IAMUser getPrincipal() {
         UserModel userModel = extractInfo(getToken().getClaimAsString("email"));
-        var iamUser = new IAMUser();
-        iamUser.setId(userModel.getId());
-        iamUser.setEmail(userModel.getEmail());
-        iamUser.setBalance(userModel.getBalance());
-        iamUser.setDeployments(userModel.getDeployments());
-        return iamUser;
+        return customerMapper.userModelToIAMUser(userModel);
     }
 
     private UserModel extractInfo(String email) {
-        UserModel userModel = userService.findUserByEmail(email).orElseGet(() -> new UserModel(email));
-        return userService.saveUser(userModel);
+        UserModel userModel = customerService.findUserByEmail(email).orElseGet(() -> new UserModel(email));
+        return customerService.saveUser(userModel);
     }
 }

@@ -1,6 +1,5 @@
 package com.omidmk.iamapi.oauth2.model;
 
-import com.omidmk.iamapi.model.deployment.DeploymentModel;
 import lombok.Data;
 
 import java.util.List;
@@ -11,5 +10,5 @@ public class IAMUser {
     private UUID id;
     private String email;
     private Long balance;
-    private List<DeploymentModel> deployments;
+    private List<Deployment> deployments;
 }
