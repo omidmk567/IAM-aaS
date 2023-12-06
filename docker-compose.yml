@@ -9,7 +9,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=iam-password
     ports:
-      - "5432:5432"
+      - "5432"
     healthcheck:
       test: "pg_isready -U postgres"
 
@@ -21,9 +21,11 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=keycloak-password
     ports:
-      - "5433:5432"
+      - "5432"
     healthcheck:
       test: "pg_isready -U postgres"
+    labels:
+      org.springframework.boot.ignore: true
 
   keycloak:
     image: quay.io/keycloak/keycloak:22.0.5
@@ -44,5 +46,7 @@ services:
       - keycloak-db
     volumes:
       - ./keycloak:/opt/keycloak/data/import
-    healthcheck:
-      test: "curl -f http://localhost:8080/health/ready || exit 1"
+#    healthcheck:
+#      test: "curl -f http://localhost:8080/health/ready || exit 1"
+    labels:
+      org.springframework.boot.ignore: true

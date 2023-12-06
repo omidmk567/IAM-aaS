@@ -1,5 +1,9 @@
 iam-api: {
-    add to docker compose,
+    customer:
+        create deployment
+        scheduler(s)
+    admin:
+
 }
 
 iam-ui: {
