@@ -1435,17 +1435,17 @@
   },
   "smtpServer": {
     "replyToDisplayName": "",
-    "starttls": "false",
+    "starttls": "true",
     "auth": "true",
     "envelopeFrom": "",
     "ssl": "false",
     "password": "${vault.smtp-password}",
     "port": "587",
-    "host": "smtp.mailgun.org",
+    "host": "smtp.gmail.com",
     "replyTo": "",
-    "from": "sandboxda9d1fd6282942d8a28a6793791ad689@mailgun.org",
+    "from": "IAM.aaS.project@gmail.com",
     "fromDisplayName": "IAM as a Service",
-    "user": "postmaster@sandboxda9d1fd6282942d8a28a6793791ad689.mailgun.org"
+    "user": "IAM.aaS.project@gmail.com"
   },
   "eventsEnabled": false,
   "eventsListeners": [
