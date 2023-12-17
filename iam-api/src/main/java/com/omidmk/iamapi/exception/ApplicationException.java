@@ -1,9 +1,9 @@
 package com.omidmk.iamapi.exception;
 
-import jakarta.annotation.Nullable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.lang.Nullable;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -18,6 +18,11 @@ public class ApplicationException extends Exception {
     }
 
     public ApplicationException(HttpStatusCode statusCode, @Nullable String reason) {
+        this(statusCode, reason, String.valueOf(reason));
+    }
+
+    public ApplicationException(HttpStatusCode statusCode, @Nullable String reason, String message) {
+        super(message);
         this.statusCode = statusCode;
         this.reason = reason;
     }
