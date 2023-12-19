@@ -12,6 +12,7 @@ import com.omidmk.iamapi.oauth2.model.IAMUser;
 import com.omidmk.iamapi.service.DeploymentService;
 import com.omidmk.iamapi.service.KeycloakService;
 import com.omidmk.iamapi.service.MailService;
+import jakarta.ws.rs.QueryParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,7 +23,7 @@ import java.security.SecureRandom;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1")
+@RequestMapping("/v1/customer")
 @RequiredArgsConstructor
 @Slf4j
 public class CustomerController {
@@ -62,6 +63,11 @@ public class CustomerController {
     @GetMapping("/deployments")
     public List<Deployment> getDeployments(@AuthenticationPrincipal IAMUser user) {
         return deploymentMapper.deploymentModelListToDeploymentList(user.getDeployments());
+    }
+
+    @GetMapping("/deployments/available")
+    public boolean isRealmAvailable(@QueryParam("realmName") String realmName) {
+        return deploymentService.isRealmAvailable(realmName);
     }
 
     @GetMapping("/userinfo")

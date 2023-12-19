@@ -13,14 +13,14 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 @RestController
-@RequestMapping("/v1")
+@RequestMapping("/v1/plans")
 public class PlanController {
-    @GetMapping("/plans")
+    @GetMapping("")
     public Stream<Plan> getAvailablePlans() {
         return Arrays.stream(PlanDV.values()).map(Plan::new);
     }
 
-    @GetMapping("/plans/{name}")
+    @GetMapping("/{name}")
     public Plan getPlan(@PathVariable String name) throws ApplicationException {
         try {
             PlanDV planDV = PlanDV.valueOf(name);

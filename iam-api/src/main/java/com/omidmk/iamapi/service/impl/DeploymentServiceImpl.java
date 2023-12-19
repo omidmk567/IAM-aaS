@@ -29,6 +29,12 @@ public class DeploymentServiceImpl implements DeploymentService {
     }
 
     @Override
+    public boolean isRealmAvailable(String realmName) {
+        Optional<DeploymentModel> foundDeployment = deploymentRepository.findByRealmName(realmName);
+        return foundDeployment.isEmpty() || foundDeployment.get().getState().equals(DeploymentModel.State.FAILED_TO_DEPLOY);
+    }
+
+    @Override
     public DeploymentModel saveDeployment(DeploymentModel deployment) {
         return deploymentRepository.save(deployment);
     }

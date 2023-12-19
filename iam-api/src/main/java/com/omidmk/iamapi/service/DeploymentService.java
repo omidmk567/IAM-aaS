@@ -8,4 +8,6 @@ public interface DeploymentService {
     DeploymentModel createDeployment(String realmName, PlanDV planDV) throws ApplicationException;
 
     DeploymentModel saveDeployment(DeploymentModel deployment);
+
+    boolean isRealmAvailable(String realmName);
 }
