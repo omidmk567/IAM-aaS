@@ -1,8 +1,7 @@
-package com.omidmk.iamapi.oauth2.model;
+package com.omidmk.iamapi.controller.dto;
 
 import com.omidmk.iamapi.model.deployment.DeploymentModel;
 import com.omidmk.iamapi.model.deployment.PlanDV;
-import com.omidmk.iamapi.model.deployment.SupportLevelDV;
 import lombok.Data;
 
 import java.util.UUID;

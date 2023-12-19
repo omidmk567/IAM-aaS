@@ -1,6 +1,6 @@
 package com.omidmk.iamapi.oauth2;
 
-import com.omidmk.iamapi.mapper.CustomerMapper;
+import com.omidmk.iamapi.mapper.UserMapper;
 import com.omidmk.iamapi.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 public class IAMJwtAuthenticationTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
     private static final JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
     private final CustomerService customerService;
-    private final CustomerMapper customerMapper;
+    private final UserMapper userMapper;
 
     @Value("${jwt.authorization.role.converter.clients}")
     private List<String> clientIds;
@@ -34,7 +34,7 @@ public class IAMJwtAuthenticationTokenConverter implements Converter<Jwt, Abstra
         Collection<GrantedAuthority> authorities = Stream
                 .concat(jwtGrantedAuthoritiesConverter.convert(jwt).stream(), extractResourceRoles(jwt).stream())
                 .toList();
-        return new IAMJwtAuthenticationToken(customerService, customerMapper, jwt, authorities);
+        return new IAMJwtAuthenticationToken(customerService, userMapper, jwt, authorities);
     }
 
     private Collection<? extends GrantedAuthority> extractResourceRoles(Jwt jwt) {
@@ -45,7 +45,7 @@ public class IAMJwtAuthenticationTokenConverter implements Converter<Jwt, Abstra
             Collection<?> resourceRoles;
             if ((resource = (Map<?, ?>) resourceAccess.get(clientId)) != null && (resourceRoles = (Collection<?>) resource.get("roles")) != null) {
                 return resourceRoles.stream()
-                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                        .map(role -> new SimpleGrantedAuthority(STR."ROLE_\{role}"))
                         .toList();
             }
         }
