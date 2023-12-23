@@ -24,12 +24,22 @@ public class IAMJwtAuthenticationToken extends JwtAuthenticationToken {
 
     @Override
     public IAMUser getPrincipal() {
-        UserModel userModel = extractInfo(getToken().getClaimAsString("email"));
+        UserModel userModel = constructUser();
         return userMapper.userModelToIAMUser(userModel);
     }
 
-    private UserModel extractInfo(String email) {
-        UserModel userModel = customerService.findUserByEmail(email).orElseGet(() -> new UserModel(email));
+    private UserModel constructUser() {
+        final String email = getToken().getClaimAsString("email");
+        final String firstName = getToken().getClaimAsString("given_name");
+        final String lastName = getToken().getClaimAsString("family_name");
+        final UserModel userModel = customerService.findUserByEmail(email).orElseGet(() -> new UserModel(email, firstName, lastName));
+
+        if (userModel.getFirstName() == null && firstName != null)
+            userModel.setFirstName(firstName);
+
+        if (userModel.getLastName() == null && lastName != null)
+            userModel.setLastName(lastName);
+
         return customerService.saveUser(userModel);
     }
 }

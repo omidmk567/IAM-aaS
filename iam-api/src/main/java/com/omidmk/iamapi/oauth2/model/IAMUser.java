@@ -10,6 +10,8 @@ import java.util.UUID;
 public class IAMUser {
     private UUID id;
     private String email;
+    private String firstName;
+    private String lastName;
     private Long balance;
     private List<DeploymentModel> deployments;
 }

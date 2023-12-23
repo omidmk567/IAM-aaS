@@ -8,6 +8,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
+import java.util.List;
+
 @Mapper(
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
         injectionStrategy = InjectionStrategy.CONSTRUCTOR
@@ -24,6 +26,8 @@ public interface UserMapper {
     UserModel iamUserToUserModel(IAMUser user);
 
     IAMUser userModelToIAMUser(UserModel userModel);
+
+    List<Customer> userModelListToCustomerList(List<UserModel> userModels);
 
     Customer userModelToCustomer(UserModel userModel);
 

@@ -1,4 +1,5 @@
 iam-api: {
+    add user role to DTOs and models
     customer:
         create deployment
         scheduler(s)

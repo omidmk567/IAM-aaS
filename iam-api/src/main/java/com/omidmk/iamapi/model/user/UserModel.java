@@ -25,6 +25,12 @@ public class UserModel {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column
+    private String firstName;
+
+    @Column
+    private String lastName;
+
     @Column(nullable = false)
     private Long balance;
 
@@ -40,15 +46,15 @@ public class UserModel {
     @Version
     private Long version;
 
-    public UserModel(String email) {
-        this(email, 0L);
+    public UserModel(String email, String firstName, String lastName) {
+        this(email, firstName, lastName, 0L);
     }
 
-    public UserModel(String email, Long balance) {
-        this(email, balance, List.of());
+    public UserModel(String email, String firstName, String lastName, Long balance) {
+        this(email, firstName, lastName,  balance, List.of());
     }
 
-    public UserModel(String email, Long balance, List<DeploymentModel> deployments) {
+    public UserModel(String email, String firstName, String lastName, Long balance, List<DeploymentModel> deployments) {
         this.email = email;
         this.balance = balance;
         this.deployments = deployments;
