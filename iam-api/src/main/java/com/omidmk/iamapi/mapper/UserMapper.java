@@ -22,7 +22,6 @@ public interface UserMapper {
 
     @Mapping(target = "lastModifiedAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "version", ignore = true)
     UserModel iamUserToUserModel(IAMUser user);
 
     IAMUser userModelToIAMUser(UserModel userModel);

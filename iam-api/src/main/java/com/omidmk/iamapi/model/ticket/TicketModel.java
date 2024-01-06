@@ -1,5 +1,6 @@
-package com.omidmk.iamapi.model.deployment;
+package com.omidmk.iamapi.model.ticket;
 
+import com.omidmk.iamapi.model.user.UserModel;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,23 +9,24 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "deployment")
+@Table(name = "tickets")
 @EntityListeners(AuditingEntityListener.class)
 @Data
 @NoArgsConstructor
-public class DeploymentModel {
+public class TicketModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, updatable = false, unique = true)
-    private String realmName;
+    @ManyToOne
+    private UserModel customer;
 
-    @Enumerated(EnumType.STRING)
-    private PlanDV plan;
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<DialogModel> dialogs;
 
     @Enumerated(EnumType.STRING)
     private State state;
@@ -39,15 +41,9 @@ public class DeploymentModel {
     @Version
     private Long version;
 
-    public DeploymentModel(String realmName, PlanDV plan) {
-        this.realmName = realmName;
-        this.plan = plan;
-    }
-
     public enum State {
-        DEPLOYING,
-        FAILED_TO_DEPLOY,
-        DEPLOYED,
-        STOPPED
+        WAITING_FOR_ADMIN_RESPONSE,
+        WAITING_FOR_CUSTOMER_RESPONSE,
+        CLOSED,
     }
 }
