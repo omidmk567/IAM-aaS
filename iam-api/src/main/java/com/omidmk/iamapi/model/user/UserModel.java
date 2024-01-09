@@ -56,7 +56,7 @@ public class UserModel {
     private Long version;
 
     public UserModel(String email, String firstName, String lastName) {
-        this(email, firstName, lastName, 0L);
+        this(email, firstName, lastName, 100L);
     }
 
     public UserModel(String email, String firstName, String lastName, Long balance) {
