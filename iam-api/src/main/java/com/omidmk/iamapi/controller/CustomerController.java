@@ -2,10 +2,7 @@ package com.omidmk.iamapi.controller;
 
 import com.omidmk.iamapi.config.KeycloakProperties;
 import com.omidmk.iamapi.controller.dto.*;
-import com.omidmk.iamapi.exception.ApplicationException;
-import com.omidmk.iamapi.exception.DialogNotFoundException;
-import com.omidmk.iamapi.exception.TicketNotFoundException;
-import com.omidmk.iamapi.exception.UserNotFoundException;
+import com.omidmk.iamapi.exception.*;
 import com.omidmk.iamapi.mapper.DeploymentMapper;
 import com.omidmk.iamapi.mapper.TicketMapper;
 import com.omidmk.iamapi.mapper.UserMapper;
@@ -23,6 +20,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,19 +44,23 @@ public class CustomerController {
     @PostMapping("/deployments")
     @ResponseStatus(HttpStatus.CREATED)
     public Deployment createDeployment(@AuthenticationPrincipal IAMUser user, @RequestBody CreateDeploymentDTO requestBody) throws ApplicationException {
-        // todo: check for available balance
+        if (user.getBalance() <= 0)
+            throw new BalanceNotEnoughException();
+
+        if (!isRealmAvailable(requestBody.getRealmName()))
+            throw new RealmAlreadyExistException();
+
         DeploymentModel deployment = deploymentService.createDeployment(requestBody.getRealmName(), requestBody.getPlan());
         try {
             final var passwordBytes = new byte[16];
             new SecureRandom().nextBytes(passwordBytes);
             final String username = "admin";
-            final String password = new String(passwordBytes);
+            final String password = new String(Base64.getEncoder().encode(passwordBytes));
             final String realmUrl = STR."\{keycloakProperties.getBaseUrl()}/admin/\{requestBody.getRealmName()}/console";
             keycloakService.createRealm(requestBody.getRealmName());
             keycloakService.createAdminUser(requestBody.getRealmName(), username, password, true);
             mailService.sendCustomerCredentials(user.getEmail(), username, password, realmUrl);
             deployment.setState(DeploymentModel.State.DEPLOYED);
-            // todo: save to database
         } catch (ApplicationException ex) {
             log.error("Application Error occurred on creating deployment. {}", ex.getMessage(), ex);
             deployment.setState(DeploymentModel.State.FAILED_TO_DEPLOY);
@@ -72,13 +74,43 @@ public class CustomerController {
     }
 
     @GetMapping("/deployments")
-    public List<Deployment> getDeployments(@AuthenticationPrincipal IAMUser user) {
-        return deploymentMapper.deploymentModelListToDeploymentList(user.getDeployments());
+    public List<Deployment> getDeployments(@AuthenticationPrincipal IAMUser user) throws UserNotFoundException {
+        List<DeploymentModel> deployments = deploymentService.findDeploymentsOfUser(user.getId());
+        return deploymentMapper.deploymentModelListToDeploymentList(deployments);
+    }
+
+    @GetMapping("/deployments/{deploymentId}")
+    public Deployment getSingleDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId) throws ApplicationException {
+        Optional<DeploymentModel> deployment = deploymentService.findDeploymentOfUserById(deploymentId, user.getId());
+        if (deployment.isEmpty())
+            throw new DeploymentNotFoundException();
+
+        return deploymentMapper.deploymentModelToDeployment(deployment.get());
+    }
+
+    @PutMapping("/deployments/{deploymentId}")
+    public Deployment updateDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId, @RequestBody UpdateDeploymentDTO updateDeploymentRequest) throws ApplicationException{
+        Optional<DeploymentModel> deployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
+        if (deployment.isEmpty())
+            throw new DeploymentNotFoundException();
+
+        DeploymentModel oldDeployment = deployment.get();
+
+        if (!oldDeployment.getRealmName().equals(updateDeploymentRequest.getRealmName()) && isRealmAvailable(updateDeploymentRequest.getRealmName()))
+            throw new RealmAlreadyExistException();
+
+        oldDeployment.setPlan(updateDeploymentRequest.getPlan());
+        oldDeployment.setRealmName(updateDeploymentRequest.getRealmName());
+        return deploymentMapper.deploymentModelToDeployment(deploymentService.saveDeployment(oldDeployment));
     }
 
     @DeleteMapping("/deployments/{deploymentId}")
-    public void deleteDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId) {
-        // todo
+    public void deleteDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId) throws ApplicationException {
+        Optional<DeploymentModel> deployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
+        if (deployment.isEmpty())
+            throw new DeploymentNotFoundException();
+
+        deploymentService.deleteDeployment(deploymentId);
     }
 
     @GetMapping("/deployments/available")

@@ -1,5 +1,6 @@
 package com.omidmk.iamapi.model.deployment;
 
+import com.omidmk.iamapi.model.user.UserModel;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,9 @@ public class DeploymentModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @ManyToOne
+    private UserModel user;
 
     @Column(nullable = false, updatable = false, unique = true)
     private String realmName;
