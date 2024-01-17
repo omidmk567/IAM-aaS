@@ -198,7 +198,7 @@ public class CustomerController {
         if (ticket.isEmpty())
             throw new TicketNotFoundException();
 
-        DialogModel dialogModel = ticket.get().getDialogs()
+        ticket.get().getDialogs()
                 .stream()
                 .filter(dialog -> dialog.getId().equals(dialogId))
                 .findFirst()
