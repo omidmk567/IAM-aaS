@@ -367,7 +367,6 @@
       "realmRoles": [],
       "clientRoles": {
         "iam-admins": [
-          "customer",
           "admin"
         ]
       },

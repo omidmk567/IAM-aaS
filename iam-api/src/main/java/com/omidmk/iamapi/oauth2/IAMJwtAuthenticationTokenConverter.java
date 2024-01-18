@@ -38,17 +38,19 @@ public class IAMJwtAuthenticationTokenConverter implements Converter<Jwt, Abstra
     }
 
     private Collection<? extends GrantedAuthority> extractResourceRoles(Jwt jwt) {
-        Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
+        Map<String, ?> resourceAccess = jwt.getClaim("resource_access");
         if (resourceAccess == null) return Collections.emptyList();
+        Stream<? extends GrantedAuthority> rolesStream = Stream.of();
         for (String clientId : clientIds) {
             Map<?, ?> resource;
             Collection<?> resourceRoles;
             if ((resource = (Map<?, ?>) resourceAccess.get(clientId)) != null && (resourceRoles = (Collection<?>) resource.get("roles")) != null) {
-                return resourceRoles.stream()
-                        .map(role -> new SimpleGrantedAuthority(STR."ROLE_\{role}"))
-                        .toList();
+                Stream<SimpleGrantedAuthority> roles = resourceRoles
+                        .stream()
+                        .map(role -> new SimpleGrantedAuthority(STR."ROLE_\{role}"));
+                rolesStream = Stream.concat(rolesStream, roles);
             }
         }
-        return Collections.emptyList();
+        return rolesStream.toList();
     }
 }

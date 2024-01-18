@@ -33,8 +33,8 @@ public class SecurityConfiguration {
 
         return http
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/**")).hasRole("admin")
-                        .requestMatchers(new AntPathRequestMatcher("/api/v1/**")).hasAnyRole("customer", "admin")
+                        .requestMatchers(new AntPathRequestMatcher("/v1/admin/**")).hasRole("admin")
+                        .requestMatchers(new AntPathRequestMatcher("/v1/**")).hasRole("customer")
                         .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
