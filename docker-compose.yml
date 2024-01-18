@@ -50,3 +50,16 @@ services:
 #      test: "curl -f http://localhost:8080/health/ready || exit 1"
     labels:
       org.springframework.boot.ignore: true
+
+  pgadmin-main:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: omidmk567@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - keycloak-db
+      - iam-api-db
+    ports:
+      - '5051:80'
+    labels:
+        org.springframework.boot.ignore: true
