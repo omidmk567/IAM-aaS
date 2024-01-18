@@ -5,8 +5,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.util.List;
@@ -14,7 +13,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "tickets")
-@EntityListeners(AuditingEntityListener.class)
 @Data
 @NoArgsConstructor
 public class TicketModel {
@@ -32,10 +30,11 @@ public class TicketModel {
     private State state;
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
-    @LastModifiedDate
+    @UpdateTimestamp
+    @Column(nullable = false)
     private Instant lastModifiedAt;
 
     @Version

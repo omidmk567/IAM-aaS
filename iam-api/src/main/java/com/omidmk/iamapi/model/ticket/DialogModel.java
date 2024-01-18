@@ -5,14 +5,12 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "dialogs")
-@EntityListeners(AuditingEntityListener.class)
 @Data
 @NoArgsConstructor
 public class DialogModel {
@@ -27,7 +25,7 @@ public class DialogModel {
     private String text;
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
     public DialogModel(UserModel user, String text) {
