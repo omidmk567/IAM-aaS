@@ -49,6 +49,9 @@ public class CustomerController {
     private final UserMapper userMapper;
     private final TicketMapper ticketMapper;
 
+    @Value("${app.iam-aas.fail-on-mail-error:false}")
+    private boolean failOnMailError;
+
     @PostMapping("/deployments")
     @ResponseStatus(HttpStatus.CREATED)
     public Deployment createDeployment(@AuthenticationPrincipal IAMUser user, @RequestBody @Valid CreateDeploymentDTO requestBody) throws ApplicationException {
@@ -68,6 +71,12 @@ public class CustomerController {
             keycloakService.createRealm(requestBody.getRealmName());
             keycloakService.createAdminUser(requestBody.getRealmName(), username, password, true);
             mailService.sendCustomerCredentials(user.getEmail(), username, password, realmUrl);
+            deployment.setState(DeploymentModel.State.DEPLOYED);
+        } catch (SendingMailFailedException ex) {
+            if (failOnMailError) {
+                log.error("Sending mail failed. {}", ex.getMessage(), ex);
+                throw ex;
+            }
             deployment.setState(DeploymentModel.State.DEPLOYED);
         } catch (ApplicationException ex) {
             log.error("Application Error occurred on creating deployment. {}", ex.getMessage(), ex);

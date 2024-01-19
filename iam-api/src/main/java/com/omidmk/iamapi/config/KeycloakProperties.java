@@ -3,7 +3,7 @@ package com.omidmk.iamapi.config;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties("keycloak")
+@ConfigurationProperties("app.iam-aas.keycloak")
 @Data
 public class KeycloakProperties {
     private String baseUrl;
