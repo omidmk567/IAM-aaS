@@ -15,11 +15,13 @@ import java.util.Collection;
 public class IAMJwtAuthenticationToken extends JwtAuthenticationToken {
     private final CustomerService customerService;
     private final UserMapper userMapper;
+    private final Long customerInitialCredit;
 
-    public IAMJwtAuthenticationToken(CustomerService customerService, UserMapper userMapper, Jwt jwt, Collection<? extends GrantedAuthority> authorities) {
+    public IAMJwtAuthenticationToken(CustomerService customerService, UserMapper userMapper, Long customerInitialCredit, Jwt jwt, Collection<? extends GrantedAuthority> authorities) {
         super(jwt, authorities, jwt.getClaim("preferred_username"));
         this.customerService = customerService;
         this.userMapper = userMapper;
+        this.customerInitialCredit = customerInitialCredit;
     }
 
     @Override
@@ -32,7 +34,7 @@ public class IAMJwtAuthenticationToken extends JwtAuthenticationToken {
         final String email = getToken().getClaimAsString("email");
         final String firstName = getToken().getClaimAsString("given_name");
         final String lastName = getToken().getClaimAsString("family_name");
-        final UserModel userModel = customerService.findUserByEmail(email).orElseGet(() -> new UserModel(email, firstName, lastName));
+        final UserModel userModel = customerService.findUserByEmail(email).orElseGet(() -> new UserModel(email, firstName, lastName, customerInitialCredit));
 
         if (userModel.getFirstName() == null && firstName != null)
             userModel.setFirstName(firstName);

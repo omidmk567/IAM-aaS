@@ -26,15 +26,18 @@ public class IAMJwtAuthenticationTokenConverter implements Converter<Jwt, Abstra
     private final CustomerService customerService;
     private final UserMapper userMapper;
 
-    @Value("${jwt.authorization.role.converter.clients}")
+    @Value("${app.iam-aas.jwt.role.converter.clients}")
     private List<String> clientIds;
+
+    @Value("${app.iam-aas.customer-initial-credit:100}")
+    private Long customerInitialCredit;
 
     @Override
     public AbstractAuthenticationToken convert(@NonNull Jwt jwt) {
         Collection<GrantedAuthority> authorities = Stream
                 .concat(jwtGrantedAuthoritiesConverter.convert(jwt).stream(), extractResourceRoles(jwt).stream())
                 .toList();
-        return new IAMJwtAuthenticationToken(customerService, userMapper, jwt, authorities);
+        return new IAMJwtAuthenticationToken(customerService, userMapper, customerInitialCredit, jwt, authorities);
     }
 
     private Collection<? extends GrantedAuthority> extractResourceRoles(Jwt jwt) {
