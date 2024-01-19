@@ -9,9 +9,10 @@ import com.omidmk.iamapi.repository.DeploymentRepository;
 import com.omidmk.iamapi.service.CustomerService;
 import com.omidmk.iamapi.service.DeploymentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -48,12 +49,12 @@ public class DeploymentServiceImpl implements DeploymentService {
     }
 
     @Override
-    public List<DeploymentModel> findDeploymentsOfUser(UUID userId) throws UserNotFoundException {
+    public Page<DeploymentModel> findDeploymentsOfUser(UUID userId, Pageable pageable) throws UserNotFoundException {
         Optional<UserModel> user = customerService.findUserById(userId);
         if (user.isEmpty())
             throw new UserNotFoundException();
 
-        return deploymentRepository.findAllByUser(user.get());
+        return deploymentRepository.findAllByUser(user.get(), pageable);
     }
 
     @Override

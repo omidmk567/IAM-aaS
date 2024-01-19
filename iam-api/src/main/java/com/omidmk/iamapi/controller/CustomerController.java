@@ -12,11 +12,17 @@ import com.omidmk.iamapi.model.ticket.TicketModel;
 import com.omidmk.iamapi.model.user.UserModel;
 import com.omidmk.iamapi.oauth2.model.IAMUser;
 import com.omidmk.iamapi.service.*;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.QueryParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SecureRandom;
@@ -29,12 +35,14 @@ import java.util.UUID;
 @RequestMapping("/v1/customer")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class CustomerController {
     private final DeploymentService deploymentService;
     private final KeycloakService keycloakService;
     private final MailService mailService;
     private final TicketService ticketService;
     private final CustomerService customerService;
+    private final DialogService dialogService;
 
     private final KeycloakProperties keycloakProperties;
     private final DeploymentMapper deploymentMapper;
@@ -43,7 +51,7 @@ public class CustomerController {
 
     @PostMapping("/deployments")
     @ResponseStatus(HttpStatus.CREATED)
-    public Deployment createDeployment(@AuthenticationPrincipal IAMUser user, @RequestBody CreateDeploymentDTO requestBody) throws ApplicationException {
+    public Deployment createDeployment(@AuthenticationPrincipal IAMUser user, @RequestBody @Valid CreateDeploymentDTO requestBody) throws ApplicationException {
         if (user.getBalance() <= 0)
             throw new BalanceNotEnoughException();
 
@@ -74,9 +82,9 @@ public class CustomerController {
     }
 
     @GetMapping("/deployments")
-    public List<Deployment> getDeployments(@AuthenticationPrincipal IAMUser user) throws UserNotFoundException {
-        List<DeploymentModel> deployments = deploymentService.findDeploymentsOfUser(user.getId());
-        return deploymentMapper.deploymentModelListToDeploymentList(deployments);
+    public List<Deployment> getDeployments(@AuthenticationPrincipal IAMUser user, @PageableDefault Pageable pageable) throws UserNotFoundException {
+        Page<DeploymentModel> deployments = deploymentService.findDeploymentsOfUser(user.getId(), pageable);
+        return deploymentMapper.deploymentModelListToDeploymentList(deployments.toList());
     }
 
     @GetMapping("/deployments/{deploymentId}")
@@ -89,7 +97,7 @@ public class CustomerController {
     }
 
     @PutMapping("/deployments/{deploymentId}")
-    public Deployment updateDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId, @RequestBody UpdateDeploymentDTO updateDeploymentRequest) throws ApplicationException{
+    public Deployment updateDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId, @RequestBody @Valid UpdateDeploymentDTO updateDeploymentRequest) throws ApplicationException{
         Optional<DeploymentModel> deployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
         if (deployment.isEmpty())
             throw new DeploymentNotFoundException();
@@ -119,9 +127,9 @@ public class CustomerController {
     }
 
     @GetMapping("/tickets")
-    public List<Ticket> getAllTickets(@AuthenticationPrincipal IAMUser user) throws ApplicationException {
-        List<TicketModel> allTickets = ticketService.findAllTicketsByUserId(user.getId());
-        return ticketMapper.ticketModelListToTicketList(allTickets);
+    public List<Ticket> getAllTickets(@AuthenticationPrincipal IAMUser user, @PageableDefault Pageable pageable) throws ApplicationException {
+        Page<TicketModel> allTickets = ticketService.findAllTicketsByUserId(user.getId(), pageable);
+        return ticketMapper.ticketModelListToTicketList(allTickets.toList());
     }
 
     @GetMapping("/tickets/{ticketId}")
@@ -134,7 +142,7 @@ public class CustomerController {
     }
 
     @PostMapping("/tickets")
-    public Ticket createNewTicket(@AuthenticationPrincipal IAMUser user, @RequestBody AddTicketDialogRequest dialogRequest) throws UserNotFoundException {
+    public Ticket createNewTicket(@AuthenticationPrincipal IAMUser user, @RequestBody @Valid AddTicketDialogRequest dialogRequest) throws UserNotFoundException {
         UserModel userModel = userMapper.iamUserToUserModel(user);
         var dialog = new DialogModel(userModel, dialogRequest.getDialog());
         var ticket = new TicketModel();
@@ -147,7 +155,7 @@ public class CustomerController {
     }
 
     @PostMapping("/tickets/{ticketId}")
-    public Ticket addDialogToTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @RequestBody AddTicketDialogRequest dialogRequest) throws ApplicationException {
+    public Ticket addDialogToTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @RequestBody @Valid AddTicketDialogRequest dialogRequest) throws ApplicationException {
         Optional<TicketModel> ticket = ticketService.findUserTicketById(user.getId(), ticketId);
         if (ticket.isEmpty())
             throw new TicketNotFoundException();
@@ -169,12 +177,14 @@ public class CustomerController {
     }
 
     @GetMapping("tickets/{ticketId}/dialogs")
-    public List<Dialog> getAllDialogsOfTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId) throws ApplicationException {
+    public List<Dialog> getAllDialogsOfTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @PageableDefault Pageable pageable) throws ApplicationException {
+        // First, make sure this ticket belongs to this user
         Optional<TicketModel> ticket = ticketService.findUserTicketById(user.getId(), ticketId);
         if (ticket.isEmpty())
             throw new TicketNotFoundException();
 
-        return ticketMapper.dialogModelListToDialogList(ticket.get().getDialogs());
+        Page<DialogModel> dialogsOfTicket = dialogService.findDialogsOfTicket(ticket.get(), pageable);
+        return ticketMapper.dialogModelListToDialogList(dialogsOfTicket.toList());
     }
 
     @GetMapping("tickets/{ticketId}/dialogs/{dialogId}")

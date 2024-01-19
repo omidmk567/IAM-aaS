@@ -4,9 +4,10 @@ import com.omidmk.iamapi.model.user.UserModel;
 import com.omidmk.iamapi.repository.UserRepository;
 import com.omidmk.iamapi.service.CustomerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,8 +32,8 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public List<UserModel> findAll() {
-        return userRepository.findAll();
+    public Page<UserModel> findAll(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 
     @Override

@@ -11,7 +11,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class ApplicationExceptionHandler {
     @ExceptionHandler(ApplicationException.class)
-    public ResponseEntity<Map<String, Object>> handleCustomNotFoundException(ApplicationException ex) {
+    public ResponseEntity<Map<String, Object>> handleApplicationException(ApplicationException ex) {
         var body = new HashMap<String, Object>();
         body.put("status", ex.getStatusCode().value());
         body.put("reason", ex.getReason());

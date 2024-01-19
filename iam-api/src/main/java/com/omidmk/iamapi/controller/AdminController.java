@@ -17,11 +17,15 @@ import com.omidmk.iamapi.service.CustomerService;
 import com.omidmk.iamapi.service.TicketService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,6 +38,7 @@ import static com.omidmk.iamapi.config.SwaggerConfig.BEARER_TOKEN_SECURITY_SCHEM
 @RequestMapping("/v1/admin")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class AdminController {
     private final CustomerService customerService;
     private final TicketService ticketService;
@@ -42,8 +47,8 @@ public class AdminController {
 
     @GetMapping("/customers")
     @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
-    public List<Customer> getAllCustomers() {
-        return userMapper.userModelListToCustomerList(customerService.findAll());
+    public List<Customer> getAllCustomers(@PageableDefault Pageable pageable) {
+        return userMapper.userModelListToCustomerList(customerService.findAll(pageable).toList());
     }
 
     @GetMapping("/customers/{userId}")
@@ -57,7 +62,7 @@ public class AdminController {
     }
 
     @PutMapping("/customers/{userId}")
-    public Customer updateCustomer(@PathVariable UUID userId, @RequestBody UpdateCustomerDTO updateCustomerDTO) throws ApplicationException {
+    public Customer updateCustomer(@PathVariable UUID userId, @RequestBody @Valid UpdateCustomerDTO updateCustomerDTO) throws ApplicationException {
         if (updateCustomerDTO == null || updateCustomerDTO.getId() == null || !updateCustomerDTO.getId().equals(userId))
             throw new UserNotFoundException();
 
@@ -87,15 +92,15 @@ public class AdminController {
     }
 
     @GetMapping("/tickets")
-    public List<Ticket> getAllTickets() {
-        List<TicketModel> allTickets = ticketService.findAllTickets();
-        return ticketMapper.ticketModelListToTicketList(allTickets);
+    public List<Ticket> getAllTickets(@PageableDefault Pageable pageable) {
+        Page<TicketModel> allTickets = ticketService.findAllTickets(pageable);
+        return ticketMapper.ticketModelListToTicketList(allTickets.toList());
     }
 
     @GetMapping("/tickets/customers/{userId}")
-    public List<Ticket> getUserTickets(@PathVariable UUID userId) throws ApplicationException {
-        List<TicketModel> allTickets = ticketService.findAllTicketsByUserId(userId);
-        return ticketMapper.ticketModelListToTicketList(allTickets);
+    public List<Ticket> getUserTickets(@PathVariable UUID userId, @PageableDefault Pageable pageable) throws ApplicationException {
+        Page<TicketModel> allTickets = ticketService.findAllTicketsByUserId(userId, pageable);
+        return ticketMapper.ticketModelListToTicketList(allTickets.toList());
     }
 
     @GetMapping("/tickets/{ticketId}")
@@ -108,25 +113,25 @@ public class AdminController {
     }
 
     @GetMapping("/tickets/unread")
-    public List<Ticket> getUnreadTickets(Pageable pageable) {
-        List<TicketModel> userTicket = ticketService.findWaitingForAdminTickets(pageable);
-        return ticketMapper.ticketModelListToTicketList(userTicket);
+    public List<Ticket> getUnreadTickets(@PageableDefault Pageable pageable) {
+        Page<TicketModel> userTicket = ticketService.findWaitingForAdminTickets(pageable);
+        return ticketMapper.ticketModelListToTicketList(userTicket.toList());
     }
 
     @GetMapping("/tickets/read")
-    public List<Ticket> getRespondedTickets(Pageable pageable) {
-        List<TicketModel> userTicket = ticketService.findWaitingForCustomerTickets(pageable);
-        return ticketMapper.ticketModelListToTicketList(userTicket);
+    public List<Ticket> getRespondedTickets(@PageableDefault Pageable pageable) {
+        Page<TicketModel> userTicket = ticketService.findWaitingForCustomerTickets(pageable);
+        return ticketMapper.ticketModelListToTicketList(userTicket.toList());
     }
 
     @GetMapping("/tickets/closed")
-    public List<Ticket> getClosedTickets(Pageable pageable) {
-        List<TicketModel> userTicket = ticketService.findClosedTickets(pageable);
-        return ticketMapper.ticketModelListToTicketList(userTicket);
+    public List<Ticket> getClosedTickets(@PageableDefault Pageable pageable) {
+        Page<TicketModel> userTicket = ticketService.findClosedTickets(pageable);
+        return ticketMapper.ticketModelListToTicketList(userTicket.toList());
     }
 
     @PostMapping("/tickets/{ticketId}")
-    public Ticket addDialogToTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @RequestBody AdminAddTicketDialogRequest dialogRequest) throws ApplicationException {
+    public Ticket addDialogToTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @RequestBody @Valid AdminAddTicketDialogRequest dialogRequest) throws ApplicationException {
         Optional<TicketModel> ticket = ticketService.findTicketById(ticketId);
         if (ticket.isEmpty())
             throw new TicketNotFoundException();
@@ -134,7 +139,7 @@ public class AdminController {
         UserModel adminUserModel = userMapper.iamUserToUserModel(user);
         var dialog = new DialogModel(adminUserModel, dialogRequest.getDialog());
         ticket.get().getDialogs().add(dialog);
-        ticket.get().setState(dialogRequest.isClose() ? TicketModel.State.CLOSED : TicketModel.State.WAITING_FOR_CUSTOMER_RESPONSE);
+        ticket.get().setState(dialogRequest.getClose() ? TicketModel.State.CLOSED : TicketModel.State.WAITING_FOR_CUSTOMER_RESPONSE);
         return ticketMapper.ticketModelToTicket(ticketService.saveTicket(ticket.get()));
     }
 }

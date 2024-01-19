@@ -20,7 +20,7 @@ public class TicketModel {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     private UserModel customer;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)

@@ -1,6 +1,8 @@
 package com.omidmk.iamapi.service;
 
 import com.omidmk.iamapi.model.user.UserModel;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +15,7 @@ public interface CustomerService {
 
     UserModel saveUser(UserModel userModel);
 
-    List<UserModel> findAll();
+    Page<UserModel> findAll(Pageable pageable);
 
     void deleteUserById(UUID userId);
 }
