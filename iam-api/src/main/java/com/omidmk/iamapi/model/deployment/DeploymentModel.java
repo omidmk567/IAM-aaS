@@ -42,9 +42,11 @@ public class DeploymentModel {
     @Version
     private Long version;
 
-    public DeploymentModel(String realmName, PlanDV plan) {
+    public DeploymentModel(UserModel user, String realmName, PlanDV plan, State state) {
+        this.user = user;
         this.realmName = realmName;
         this.plan = plan;
+        this.state = state;
     }
 
     public enum State {

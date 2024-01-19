@@ -23,14 +23,15 @@ public class DeploymentServiceImpl implements DeploymentService {
     private final CustomerService customerService;
 
     @Override
-    public DeploymentModel createDeployment(String realmName, PlanDV planDV) throws RealmAlreadyExistException {
+    public DeploymentModel createDeployment(UUID userId, String realmName, PlanDV planDV) throws RealmAlreadyExistException, UserNotFoundException {
+        UserModel userModel = customerService.findUserById(userId).orElseThrow(UserNotFoundException::new);
+
         Optional<DeploymentModel> foundDeployment = deploymentRepository.findByRealmName(realmName);
-        // if its found and the state is FAILED_TO_DEPLOY, lets try again
         if (foundDeployment.isPresent() && !foundDeployment.get().getState().equals(DeploymentModel.State.FAILED_TO_DEPLOY))
             throw new RealmAlreadyExistException();
 
-        var deployment = new DeploymentModel(realmName, planDV);
-        deployment.setState(DeploymentModel.State.DEPLOYING);
+        // if its found and the state is FAILED_TO_DEPLOY, lets try again
+        var deployment = foundDeployment.orElseGet(() -> new DeploymentModel(userModel, realmName, planDV, DeploymentModel.State.DEPLOYING));
         return deploymentRepository.save(deployment);
     }
 

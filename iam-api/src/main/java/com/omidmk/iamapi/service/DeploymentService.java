@@ -4,6 +4,7 @@ import com.omidmk.iamapi.exception.RealmAlreadyExistException;
 import com.omidmk.iamapi.exception.UserNotFoundException;
 import com.omidmk.iamapi.model.deployment.DeploymentModel;
 import com.omidmk.iamapi.model.deployment.PlanDV;
+import com.omidmk.iamapi.model.user.UserModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -11,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface DeploymentService {
-    DeploymentModel createDeployment(String realmName, PlanDV planDV) throws RealmAlreadyExistException;
+    DeploymentModel createDeployment(UUID userId, String realmName, PlanDV planDV) throws RealmAlreadyExistException, UserNotFoundException;
 
     DeploymentModel saveDeployment(DeploymentModel deployment);
 

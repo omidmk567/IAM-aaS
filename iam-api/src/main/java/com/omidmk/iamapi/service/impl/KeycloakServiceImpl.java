@@ -46,6 +46,18 @@ public class KeycloakServiceImpl implements KeycloakService {
         log.info("Realm with name {} created successfully", realm);
     }
 
+    public void deleteRealm(String realm) throws RealmNotFoundException {
+        keycloak.realms()
+                .findAll()
+                .stream()
+                .filter(it -> it.getRealm().equals(realm))
+                .findAny()
+                .orElseThrow(RealmNotFoundException::new);
+
+        log.info("About to delete realm {}.", realm);
+        keycloak.realm(realm).remove();
+    }
+
     public void createAdminUser(String realm, String username, String password, boolean temporary) throws ApplicationException {
         keycloak.realms()
                 .findAll()

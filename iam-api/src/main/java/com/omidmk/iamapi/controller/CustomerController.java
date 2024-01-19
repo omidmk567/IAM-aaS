@@ -61,29 +61,35 @@ public class CustomerController {
         if (!isRealmAvailable(requestBody.getRealmName()))
             throw new RealmAlreadyExistException();
 
-        DeploymentModel deployment = deploymentService.createDeployment(requestBody.getRealmName(), requestBody.getPlan());
+        var deployment = new DeploymentModel();
         try {
+            deployment = deploymentService.createDeployment(user.getId(), requestBody.getRealmName(), requestBody.getPlan());
             final var passwordBytes = new byte[16];
             new SecureRandom().nextBytes(passwordBytes);
-            final String username = "admin";
-            final String password = new String(Base64.getEncoder().encode(passwordBytes));
-            final String realmUrl = STR."\{keycloakProperties.getBaseUrl()}/admin/\{requestBody.getRealmName()}/console";
+            final var username = "admin";
+            final var password = new String(Base64.getEncoder().encode(passwordBytes));
+            final var realmUrl = STR."\{keycloakProperties.getBaseUrl()}/admin/\{requestBody.getRealmName()}/console";
             keycloakService.createRealm(requestBody.getRealmName());
             keycloakService.createAdminUser(requestBody.getRealmName(), username, password, true);
             mailService.sendCustomerCredentials(user.getEmail(), username, password, realmUrl);
             deployment.setState(DeploymentModel.State.DEPLOYED);
         } catch (SendingMailFailedException ex) {
+            log.error("Sending mail error occurred on creating deployment. {}", ex.getMessage(), ex);
             if (failOnMailError) {
-                log.error("Sending mail failed. {}", ex.getMessage(), ex);
+                log.warn("Fail on mail error is on.");
                 throw ex;
             }
             deployment.setState(DeploymentModel.State.DEPLOYED);
         } catch (ApplicationException ex) {
             log.error("Application Error occurred on creating deployment. {}", ex.getMessage(), ex);
             deployment.setState(DeploymentModel.State.FAILED_TO_DEPLOY);
+            keycloakService.deleteRealm(requestBody.getRealmName());
+            throw ex;
         } catch (RuntimeException ex) {
             log.error("Runtime Error occurred on creating deployment. {}", ex.getMessage(), ex);
             deployment.setState(DeploymentModel.State.FAILED_TO_DEPLOY);
+            keycloakService.deleteRealm(requestBody.getRealmName());
+            throw new InternalException(ex.getMessage());
         } finally {
             deployment = deploymentService.saveDeployment(deployment);
         }
@@ -98,7 +104,7 @@ public class CustomerController {
 
     @GetMapping("/deployments/{deploymentId}")
     public Deployment getSingleDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId) throws ApplicationException {
-        Optional<DeploymentModel> deployment = deploymentService.findDeploymentOfUserById(deploymentId, user.getId());
+        Optional<DeploymentModel> deployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
         if (deployment.isEmpty())
             throw new DeploymentNotFoundException();
 
