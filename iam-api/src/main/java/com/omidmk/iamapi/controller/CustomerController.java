@@ -168,15 +168,13 @@ public class CustomerController {
 
     @PostMapping("/tickets/{ticketId}")
     public Ticket addDialogToTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @RequestBody @Valid AddTicketDialogRequest dialogRequest) throws ApplicationException {
-        Optional<TicketModel> ticket = ticketService.findUserTicketById(user.getId(), ticketId);
-        if (ticket.isEmpty())
-            throw new TicketNotFoundException();
+        TicketModel ticket = ticketService.findUserTicketById(user.getId(), ticketId).orElseThrow(TicketNotFoundException::new);
+        UserModel userModel = customerService.findUserById(user.getId());
 
-        UserModel userModel = userMapper.iamUserToUserModel(user);
         var dialog = new DialogModel(userModel, dialogRequest.getDialog());
-        ticket.get().getDialogs().add(dialog);
-        ticket.get().setState(TicketModel.State.WAITING_FOR_ADMIN_RESPONSE);
-        return ticketMapper.ticketModelToTicket(ticketService.saveTicket(ticket.get()));
+        ticket.getDialogs().add(dialog);
+        ticket.setState(TicketModel.State.WAITING_FOR_ADMIN_RESPONSE);
+        return ticketMapper.ticketModelToTicket(ticketService.saveTicket(ticket));
     }
 
     @DeleteMapping("/tickets/{ticketId}")

@@ -12,7 +12,8 @@ import java.util.List;
 
 @Mapper(
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
-        injectionStrategy = InjectionStrategy.CONSTRUCTOR
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR,
+        imports = {TicketMapper.class, DeploymentMapper.class}
 )
 public interface UserMapper {
     @Mapping(target = "lastModifiedAt", ignore = true)
