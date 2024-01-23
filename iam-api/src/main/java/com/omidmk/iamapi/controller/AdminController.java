@@ -53,24 +53,18 @@ public class AdminController {
 
     @GetMapping("/customers/{userId}")
     @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
-    public Customer getSingleCustomer(@PathVariable UUID userId) throws ApplicationException {
-        Optional<UserModel> foundUser = customerService.findUserById(userId);
-        if (foundUser.isEmpty())
-            throw new UserNotFoundException();
+    public Customer getSingleCustomer(@PathVariable UUID userId) throws UserNotFoundException {
+        UserModel foundUser = customerService.findUserById(userId);
 
-        return userMapper.userModelToCustomer(foundUser.get());
+        return userMapper.userModelToCustomer(foundUser);
     }
 
     @PutMapping("/customers/{userId}")
-    public Customer updateCustomer(@PathVariable UUID userId, @RequestBody @Valid UpdateCustomerDTO updateCustomerDTO) throws ApplicationException {
+    public Customer updateCustomer(@PathVariable UUID userId, @RequestBody @Valid UpdateCustomerDTO updateCustomerDTO) throws UserNotFoundException {
         if (updateCustomerDTO == null || updateCustomerDTO.getId() == null || !updateCustomerDTO.getId().equals(userId))
             throw new UserNotFoundException();
 
-        Optional<UserModel> foundUser = customerService.findUserById(userId);
-        if (foundUser.isEmpty())
-            throw new UserNotFoundException();
-
-        UserModel userModel = foundUser.get();
+        UserModel userModel = customerService.findUserById(userId);
         if (StringUtils.isNotEmpty(updateCustomerDTO.getFirstName()))
             userModel.setFirstName(updateCustomerDTO.getFirstName());
 
@@ -83,12 +77,10 @@ public class AdminController {
     }
 
     @DeleteMapping("/customers/{userId}")
-    public void deleteCustomer(@PathVariable UUID userId) throws ApplicationException {
-        Optional<UserModel> foundUser = customerService.findUserById(userId);
-        if (foundUser.isEmpty())
-            throw new UserNotFoundException();
+    public void deleteCustomer(@PathVariable UUID userId) throws UserNotFoundException {
+        UserModel userModel = customerService.findUserById(userId);
 
-        customerService.deleteUserById(foundUser.get().getId());
+        customerService.deleteUserById(userModel.getId());
     }
 
     @GetMapping("/tickets")
@@ -104,12 +96,10 @@ public class AdminController {
     }
 
     @GetMapping("/tickets/{ticketId}")
-    public Ticket getSingleTicket(@PathVariable UUID ticketId) throws ApplicationException {
-        Optional<TicketModel> userTicket = ticketService.findTicketById(ticketId);
-        if (userTicket.isEmpty())
-            throw new TicketNotFoundException();
+    public Ticket getSingleTicket(@PathVariable UUID ticketId) throws TicketNotFoundException {
+        TicketModel userTicket = ticketService.findTicketById(ticketId);
 
-        return ticketMapper.ticketModelToTicket(userTicket.get());
+        return ticketMapper.ticketModelToTicket(userTicket);
     }
 
     @GetMapping("/tickets/unread")
@@ -131,15 +121,13 @@ public class AdminController {
     }
 
     @PostMapping("/tickets/{ticketId}")
-    public Ticket addDialogToTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @RequestBody @Valid AdminAddTicketDialogRequest dialogRequest) throws ApplicationException {
-        Optional<TicketModel> ticket = ticketService.findTicketById(ticketId);
-        if (ticket.isEmpty())
-            throw new TicketNotFoundException();
+    public Ticket addDialogToTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @RequestBody @Valid AdminAddTicketDialogRequest dialogRequest) throws TicketNotFoundException {
+        TicketModel ticket = ticketService.findTicketById(ticketId);
 
         UserModel adminUserModel = userMapper.iamUserToUserModel(user);
         var dialog = new DialogModel(adminUserModel, dialogRequest.getDialog());
-        ticket.get().getDialogs().add(dialog);
-        ticket.get().setState(dialogRequest.getClose() ? TicketModel.State.CLOSED : TicketModel.State.WAITING_FOR_CUSTOMER_RESPONSE);
-        return ticketMapper.ticketModelToTicket(ticketService.saveTicket(ticket.get()));
+        ticket.getDialogs().add(dialog);
+        ticket.setState(dialogRequest.getClose() ? TicketModel.State.CLOSED : TicketModel.State.WAITING_FOR_CUSTOMER_RESPONSE);
+        return ticketMapper.ticketModelToTicket(ticketService.saveTicket(ticket));
     }
 }

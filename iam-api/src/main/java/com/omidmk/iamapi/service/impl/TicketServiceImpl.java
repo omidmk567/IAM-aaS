@@ -1,6 +1,7 @@
 package com.omidmk.iamapi.service.impl;
 
 import com.omidmk.iamapi.exception.ApplicationException;
+import com.omidmk.iamapi.exception.TicketNotFoundException;
 import com.omidmk.iamapi.exception.UserNotFoundException;
 import com.omidmk.iamapi.model.ticket.TicketModel;
 import com.omidmk.iamapi.model.user.UserModel;
@@ -28,21 +29,17 @@ public class TicketServiceImpl implements TicketService {
         return ticketRepository.findAll(pageable);
     }
 
-    public Page<TicketModel> findAllTicketsByUserId(UUID userId, Pageable pageable) throws ApplicationException {
-        Optional<UserModel> user = customerService.findUserById(userId);
-        if (user.isEmpty())
-            throw new UserNotFoundException();
+    public Page<TicketModel> findAllTicketsByUserId(UUID userId, Pageable pageable) throws UserNotFoundException {
+        UserModel userModel = customerService.findUserById(userId);
 
-        return ticketRepository.findAllByCustomerIs(user.get(), pageable);
+        return ticketRepository.findAllByCustomerIs(userModel, pageable);
     }
 
     @Override
     public Optional<TicketModel> findUserTicketById(UUID userId, UUID ticketId) throws ApplicationException {
-        Optional<UserModel> user = customerService.findUserById(userId);
-        if (user.isEmpty())
-            throw new UserNotFoundException();
+        UserModel userModel = customerService.findUserById(userId);
 
-        return ticketRepository.findByIdAndCustomer(ticketId, user.get());
+        return ticketRepository.findByIdAndCustomer(ticketId, userModel);
     }
 
     @Override
@@ -61,8 +58,8 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public Optional<TicketModel> findTicketById(UUID ticketId) {
-        return ticketRepository.findById(ticketId);
+    public TicketModel findTicketById(UUID ticketId) throws TicketNotFoundException {
+        return ticketRepository.findById(ticketId).orElseThrow(TicketNotFoundException::new);
     }
 
     public TicketModel saveTicket(TicketModel ticketModel) {

@@ -1,5 +1,6 @@
 package com.omidmk.iamapi.service.impl;
 
+import com.omidmk.iamapi.exception.UserNotFoundException;
 import com.omidmk.iamapi.model.user.UserModel;
 import com.omidmk.iamapi.repository.UserRepository;
 import com.omidmk.iamapi.service.CustomerService;
@@ -22,8 +23,8 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Optional<UserModel> findUserById(UUID uuid) {
-        return userRepository.findById(uuid);
+    public UserModel findUserById(UUID uuid) throws UserNotFoundException {
+        return userRepository.findById(uuid).orElseThrow(UserNotFoundException::new);
     }
 
     @Override

@@ -231,7 +231,7 @@ public class CustomerController {
 
     @GetMapping("/userinfo")
     public Customer getUserInfo(@AuthenticationPrincipal IAMUser user) throws UserNotFoundException {
-        UserModel userModel = customerService.findUserById(user.getId()).orElseThrow(UserNotFoundException::new);
+        UserModel userModel = customerService.findUserById(user.getId());
         return userMapper.userModelToCustomer(userModel);
     }
 }
