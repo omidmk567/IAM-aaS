@@ -83,7 +83,8 @@ public class CustomerController {
         } catch (ApplicationException ex) {
             log.error("Application Error occurred on creating deployment. {}", ex.getMessage(), ex);
             deployment.setState(DeploymentModel.State.FAILED_TO_DEPLOY);
-            keycloakService.deleteRealm(requestBody.getRealmName());
+            if (!(ex instanceof RealmAlreadyExistException))
+                keycloakService.deleteRealm(requestBody.getRealmName());
             throw ex;
         } catch (RuntimeException ex) {
             log.error("Runtime Error occurred on creating deployment. {}", ex.getMessage(), ex);
@@ -118,12 +119,7 @@ public class CustomerController {
             throw new DeploymentNotFoundException();
 
         DeploymentModel oldDeployment = deployment.get();
-
-        if (!oldDeployment.getRealmName().equals(updateDeploymentRequest.getRealmName()) && isRealmAvailable(updateDeploymentRequest.getRealmName()))
-            throw new RealmAlreadyExistException();
-
         oldDeployment.setPlan(updateDeploymentRequest.getPlan());
-        oldDeployment.setRealmName(updateDeploymentRequest.getRealmName());
         return deploymentMapper.deploymentModelToDeployment(deploymentService.saveDeployment(oldDeployment));
     }
 
@@ -133,6 +129,7 @@ public class CustomerController {
         if (deployment.isEmpty())
             throw new DeploymentNotFoundException();
 
+        keycloakService.deleteRealm(deployment.get().getRealmName());
         deploymentService.deleteDeployment(deploymentId);
     }
 
@@ -233,7 +230,8 @@ public class CustomerController {
     }
 
     @GetMapping("/userinfo")
-    public Customer getUserInfo(@AuthenticationPrincipal IAMUser user) {
-        return userMapper.iamUserToCustomer(user);
+    public Customer getUserInfo(@AuthenticationPrincipal IAMUser user) throws UserNotFoundException {
+        UserModel userModel = customerService.findUserById(user.getId()).orElseThrow(UserNotFoundException::new);
+        return userMapper.userModelToCustomer(userModel);
     }
 }

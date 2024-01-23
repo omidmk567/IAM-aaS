@@ -53,6 +53,6 @@ public class DeploymentModel {
         DEPLOYING,
         FAILED_TO_DEPLOY,
         DEPLOYED,
-        STOPPED
+        STOPPED,
     }
 }
