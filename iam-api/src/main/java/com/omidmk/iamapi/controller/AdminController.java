@@ -51,7 +51,7 @@ public class AdminController {
 
     @GetMapping("/customers")
     @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
-    public List<Customer> getAllCustomers(@QueryParam("filter") @DefaultValue("customers") String filter, @PageableDefault Pageable pageable) {
+    public List<Customer> getAllCustomers(@RequestParam(value = "filter", defaultValue = "customers") String filter, @PageableDefault Pageable pageable) {
         Page<UserModel> userModels = switch (filter) {
             case "customers" -> customerService.findAllCustomers(pageable);
             case "admins" -> customerService.findAllAdmins(pageable);
@@ -71,7 +71,7 @@ public class AdminController {
 
     @PutMapping("/customers/{userId}")
     public Customer updateCustomer(@PathVariable UUID userId, @RequestBody @Valid UpdateCustomerDTO updateCustomerDTO) throws UserNotFoundException {
-        if (updateCustomerDTO == null || updateCustomerDTO.getId() == null || !updateCustomerDTO.getId().equals(userId))
+        if (updateCustomerDTO == null || updateCustomerDTO.getId() == null || !updateCustomerDTO.getId().equals(userId.toString()))
             throw new UserNotFoundException();
 
         UserModel userModel = customerService.findUserById(userId);
