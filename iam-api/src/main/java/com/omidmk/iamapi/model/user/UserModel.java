@@ -25,6 +25,9 @@ public class UserModel {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(nullable = false)
+    private Boolean isAdmin;
+
     @Column
     private String firstName;
 
@@ -51,16 +54,17 @@ public class UserModel {
     @Version
     private Long version;
 
-    public UserModel(String email, String firstName, String lastName) {
-        this(email, firstName, lastName, 100L);
+    public UserModel(String email, boolean isAdmin, String firstName, String lastName) {
+        this(email, isAdmin, firstName, lastName, 100L);
     }
 
-    public UserModel(String email, String firstName, String lastName, Long balance) {
-        this(email, firstName, lastName,  balance, List.of());
+    public UserModel(String email, boolean isAdmin, String firstName, String lastName, Long balance) {
+        this(email, isAdmin, firstName, lastName,  balance, List.of());
     }
 
-    public UserModel(String email, String firstName, String lastName, Long balance, List<DeploymentModel> deployments) {
+    public UserModel(String email, boolean isAdmin, String firstName, String lastName, Long balance, List<DeploymentModel> deployments) {
         this.email = email;
+        this.isAdmin = isAdmin;
         this.firstName = firstName;
         this.lastName = lastName;
         this.balance = balance;
