@@ -5,6 +5,7 @@ import com.omidmk.iamapi.controller.dto.Customer;
 import com.omidmk.iamapi.controller.dto.Ticket;
 import com.omidmk.iamapi.controller.dto.UpdateCustomerDTO;
 import com.omidmk.iamapi.exception.ApplicationException;
+import com.omidmk.iamapi.exception.RealmNotFoundException;
 import com.omidmk.iamapi.exception.TicketNotFoundException;
 import com.omidmk.iamapi.exception.UserNotFoundException;
 import com.omidmk.iamapi.mapper.TicketMapper;
@@ -14,13 +15,15 @@ import com.omidmk.iamapi.model.ticket.TicketModel;
 import com.omidmk.iamapi.model.user.UserModel;
 import com.omidmk.iamapi.oauth2.model.IAMUser;
 import com.omidmk.iamapi.service.CustomerService;
+import com.omidmk.iamapi.service.KeycloakService;
 import com.omidmk.iamapi.service.TicketService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.QueryParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -29,7 +32,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.omidmk.iamapi.config.SwaggerConfig.BEARER_TOKEN_SECURITY_SCHEME;
@@ -42,13 +44,21 @@ import static com.omidmk.iamapi.config.SwaggerConfig.BEARER_TOKEN_SECURITY_SCHEM
 public class AdminController {
     private final CustomerService customerService;
     private final TicketService ticketService;
+    private final KeycloakService keycloakService;
+
     private final UserMapper userMapper;
     private final TicketMapper ticketMapper;
 
     @GetMapping("/customers")
     @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
-    public List<Customer> getAllCustomers(@PageableDefault Pageable pageable) {
-        return userMapper.userModelListToCustomerList(customerService.findAll(pageable).toList());
+    public List<Customer> getAllCustomers(@RequestParam(value = "filter", defaultValue = "customers") String filter, @PageableDefault Pageable pageable) {
+        Page<UserModel> userModels = switch (filter) {
+            case "customers" -> customerService.findAllCustomers(pageable);
+            case "admins" -> customerService.findAllAdmins(pageable);
+            case "all" -> customerService.findAll(pageable);
+            default -> customerService.findAllCustomers(pageable);
+        };
+        return userMapper.userModelListToCustomerList(userModels.toList());
     }
 
     @GetMapping("/customers/{userId}")
@@ -61,18 +71,14 @@ public class AdminController {
 
     @PutMapping("/customers/{userId}")
     public Customer updateCustomer(@PathVariable UUID userId, @RequestBody @Valid UpdateCustomerDTO updateCustomerDTO) throws UserNotFoundException {
-        if (updateCustomerDTO == null || updateCustomerDTO.getId() == null || !updateCustomerDTO.getId().equals(userId))
+        if (updateCustomerDTO == null || updateCustomerDTO.getId() == null || !updateCustomerDTO.getId().equals(userId.toString()))
             throw new UserNotFoundException();
 
         UserModel userModel = customerService.findUserById(userId);
-        if (StringUtils.isNotEmpty(updateCustomerDTO.getFirstName()))
-            userModel.setFirstName(updateCustomerDTO.getFirstName());
+        userModel.setFirstName(updateCustomerDTO.getFirstName());
+        userModel.setLastName(updateCustomerDTO.getLastName());
+        userModel.setBalance(updateCustomerDTO.getBalance());
 
-        if (StringUtils.isNotEmpty(updateCustomerDTO.getLastName()))
-            userModel.setLastName(updateCustomerDTO.getLastName());
-
-        if (updateCustomerDTO.getBalance() != null)
-            userModel.setBalance(updateCustomerDTO.getBalance());
         return userMapper.userModelToCustomer(customerService.saveUser(userModel));
     }
 
@@ -80,7 +86,15 @@ public class AdminController {
     public void deleteCustomer(@PathVariable UUID userId) throws UserNotFoundException {
         UserModel userModel = customerService.findUserById(userId);
 
+        userModel.getDeployments().forEach(deployment -> {
+            try {
+                keycloakService.deleteRealm(deployment.getRealmName());
+            } catch (RealmNotFoundException e) {
+                log.warn("Tried to delete realm but not found in keycloak!.", e);
+            }
+        });
         customerService.deleteUserById(userModel.getId());
+
     }
 
     @GetMapping("/tickets")

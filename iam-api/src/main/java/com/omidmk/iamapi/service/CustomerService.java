@@ -17,5 +17,9 @@ public interface CustomerService {
 
     Page<UserModel> findAll(Pageable pageable);
 
+    Page<UserModel> findAllCustomers(Pageable pageable);
+
+    Page<UserModel> findAllAdmins(Pageable pageable);
+
     void deleteUserById(UUID userId);
 }

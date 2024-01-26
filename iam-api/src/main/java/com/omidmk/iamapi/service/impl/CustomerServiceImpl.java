@@ -38,6 +38,16 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
+    public Page<UserModel> findAllCustomers(Pageable pageable) {
+        return userRepository.findAllByIsAdmin(false, pageable);
+    }
+
+    @Override
+    public Page<UserModel> findAllAdmins(Pageable pageable) {
+        return userRepository.findAllByIsAdmin(true, pageable);
+    }
+
+    @Override
     public void deleteUserById(UUID userId) {
         userRepository.deleteById(userId);
     }

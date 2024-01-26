@@ -31,10 +31,11 @@ public class IAMJwtAuthenticationToken extends JwtAuthenticationToken {
     }
 
     private UserModel constructUser() {
+        final boolean isAdmin = getAuthorities().stream().anyMatch(auth -> auth.getAuthority().contains("admin"));
         final String email = getToken().getClaimAsString("email");
         final String firstName = getToken().getClaimAsString("given_name");
         final String lastName = getToken().getClaimAsString("family_name");
-        final UserModel userModel = customerService.findUserByEmail(email).orElseGet(() -> new UserModel(email, firstName, lastName, customerInitialCredit));
+        final UserModel userModel = customerService.findUserByEmail(email).orElseGet(() -> new UserModel(email, isAdmin, firstName, lastName, customerInitialCredit));
 
         if (userModel.getFirstName() == null && firstName != null)
             userModel.setFirstName(firstName);

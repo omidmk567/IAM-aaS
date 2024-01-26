@@ -11,6 +11,7 @@ import java.util.UUID;
 public class IAMUser {
     private UUID id;
     private String email;
+    private Boolean isAdmin;
     private String firstName;
     private String lastName;
     private Long balance;
