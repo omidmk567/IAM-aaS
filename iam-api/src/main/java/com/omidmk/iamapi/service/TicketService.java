@@ -1,20 +1,19 @@
 package com.omidmk.iamapi.service;
 
-import com.omidmk.iamapi.exception.ApplicationException;
 import com.omidmk.iamapi.exception.TicketNotFoundException;
+import com.omidmk.iamapi.exception.UserNotFoundException;
 import com.omidmk.iamapi.model.ticket.TicketModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Optional;
 import java.util.UUID;
 
 public interface TicketService {
     Page<TicketModel> findAllTickets(Pageable pageable);
 
-    Page<TicketModel> findAllTicketsByUserId(UUID userId, Pageable pageable) throws ApplicationException;
+    Page<TicketModel> findAllTicketsByUserId(UUID userId, Pageable pageable) throws UserNotFoundException;
 
-    Optional<TicketModel> findUserTicketById(UUID userId, UUID ticketId) throws ApplicationException;
+    TicketModel findUserTicketById(UUID userId, UUID ticketId) throws UserNotFoundException, TicketNotFoundException;
 
     Page<TicketModel> findWaitingForAdminTickets(Pageable pageable);
 

@@ -18,10 +18,10 @@ public class DialogModel {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     private UserModel user;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     private TicketModel ticket;
 
     @Column(updatable = false)

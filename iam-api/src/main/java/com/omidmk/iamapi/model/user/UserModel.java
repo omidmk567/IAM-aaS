@@ -37,10 +37,10 @@ public class UserModel {
     @Column(nullable = false)
     private Long balance;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     private List<DeploymentModel> deployments;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     private List<TicketModel> tickets;
 
     @CreationTimestamp

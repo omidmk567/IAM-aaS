@@ -4,10 +4,7 @@ import com.omidmk.iamapi.controller.dto.AdminAddTicketDialogRequest;
 import com.omidmk.iamapi.controller.dto.Customer;
 import com.omidmk.iamapi.controller.dto.Ticket;
 import com.omidmk.iamapi.controller.dto.UpdateCustomerDTO;
-import com.omidmk.iamapi.exception.ApplicationException;
-import com.omidmk.iamapi.exception.RealmNotFoundException;
-import com.omidmk.iamapi.exception.TicketNotFoundException;
-import com.omidmk.iamapi.exception.UserNotFoundException;
+import com.omidmk.iamapi.exception.*;
 import com.omidmk.iamapi.mapper.TicketMapper;
 import com.omidmk.iamapi.mapper.UserMapper;
 import com.omidmk.iamapi.model.ticket.DialogModel;
@@ -20,8 +17,6 @@ import com.omidmk.iamapi.service.TicketService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.QueryParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -135,13 +130,22 @@ public class AdminController {
     }
 
     @PostMapping("/tickets/{ticketId}")
-    public Ticket addDialogToTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @RequestBody @Valid AdminAddTicketDialogRequest dialogRequest) throws TicketNotFoundException {
-        TicketModel ticket = ticketService.findTicketById(ticketId);
+    public Ticket addDialogToTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @RequestBody @Valid AdminAddTicketDialogRequest dialogRequest) throws TicketNotFoundException, ClosedTicketModifyingException, UserNotFoundException {
+        TicketModel ticketModel = ticketService.findTicketById(ticketId);
+        if (TicketModel.State.CLOSED.equals(ticketModel.getState()))
+            throw new ClosedTicketModifyingException();
 
-        UserModel adminUserModel = userMapper.iamUserToUserModel(user);
-        var dialog = new DialogModel(adminUserModel, dialogRequest.getDialog());
-        ticket.getDialogs().add(dialog);
-        ticket.setState(dialogRequest.getClose() ? TicketModel.State.CLOSED : TicketModel.State.WAITING_FOR_CUSTOMER_RESPONSE);
-        return ticketMapper.ticketModelToTicket(ticketService.saveTicket(ticket));
+        UserModel customer = ticketModel.getCustomer();
+        TicketModel customerTicketModel = customer.getTickets()
+                .stream()
+                .filter(it -> it.getId().equals(ticketModel.getId()))
+                .findFirst()
+                .orElseThrow(TicketNotFoundException::new);
+        UserModel adminUser = customerService.findUserById(user.getId());
+        var dialog = new DialogModel(adminUser, dialogRequest.getDialog());
+        customerTicketModel.getDialogs().add(dialog);
+        customerTicketModel.setState(dialogRequest.getClose() ? TicketModel.State.CLOSED : TicketModel.State.WAITING_FOR_CUSTOMER_RESPONSE);
+        customerService.saveUser(customer);
+        return ticketMapper.ticketModelToTicket(customerTicketModel);
     }
 }

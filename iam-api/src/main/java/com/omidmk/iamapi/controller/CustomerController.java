@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.*;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -42,7 +41,6 @@ public class CustomerController {
     private final MailService mailService;
     private final TicketService ticketService;
     private final CustomerService customerService;
-    private final DialogService dialogService;
 
     private final KeycloakProperties keycloakProperties;
     private final DeploymentMapper deploymentMapper;
@@ -105,32 +103,27 @@ public class CustomerController {
 
     @GetMapping("/deployments/{deploymentId}")
     public Deployment getSingleDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId) throws ApplicationException {
-        Optional<DeploymentModel> deployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
-        if (deployment.isEmpty())
-            throw new DeploymentNotFoundException();
+        DeploymentModel deployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
 
-        return deploymentMapper.deploymentModelToDeployment(deployment.get());
+        return deploymentMapper.deploymentModelToDeployment(deployment);
     }
 
     @PutMapping("/deployments/{deploymentId}")
     public Deployment updateDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId, @RequestBody @Valid UpdateDeploymentDTO updateDeploymentRequest) throws ApplicationException{
-        Optional<DeploymentModel> deployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
-        if (deployment.isEmpty())
-            throw new DeploymentNotFoundException();
+        DeploymentModel oldDeployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
 
-        DeploymentModel oldDeployment = deployment.get();
         oldDeployment.setPlan(updateDeploymentRequest.getPlan());
         return deploymentMapper.deploymentModelToDeployment(deploymentService.saveDeployment(oldDeployment));
     }
 
     @DeleteMapping("/deployments/{deploymentId}")
     public void deleteDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId) throws ApplicationException {
-        Optional<DeploymentModel> deployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
-        if (deployment.isEmpty())
-            throw new DeploymentNotFoundException();
+        DeploymentModel deployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
+        UserModel userModel = customerService.findUserById(user.getId());
+        userModel.getDeployments().remove(deployment);
 
-        keycloakService.deleteRealm(deployment.get().getRealmName());
-        deploymentService.deleteDeployment(deploymentId);
+        keycloakService.deleteRealm(deployment.getRealmName());
+        customerService.saveUser(userModel);
     }
 
     @GetMapping("/deployments/available")
@@ -146,85 +139,63 @@ public class CustomerController {
 
     @GetMapping("/tickets/{ticketId}")
     public Ticket getSingleTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId) throws ApplicationException {
-        Optional<TicketModel> userTicket = ticketService.findUserTicketById(user.getId(), ticketId);
-        if (userTicket.isEmpty())
-            throw new TicketNotFoundException();
+        TicketModel userTicket = ticketService.findUserTicketById(user.getId(), ticketId);
 
-        return ticketMapper.ticketModelToTicket(userTicket.get());
+        return ticketMapper.ticketModelToTicket(userTicket);
     }
 
     @PostMapping("/tickets")
-    public Ticket createNewTicket(@AuthenticationPrincipal IAMUser user, @RequestBody @Valid AddTicketDialogRequest dialogRequest) throws UserNotFoundException {
-        UserModel userModel = userMapper.iamUserToUserModel(user);
-        var dialog = new DialogModel(userModel, dialogRequest.getDialog());
+    public Ticket createNewTicket(@AuthenticationPrincipal IAMUser user, @RequestBody @Valid AddTicketDialogRequest dialogRequest) throws UserNotFoundException, TicketNotFoundException {
+        UserModel userModel = customerService.findUserById(user.getId());
         var ticket = new TicketModel();
         ticket.setCustomer(userModel);
         ticket.setState(TicketModel.State.WAITING_FOR_ADMIN_RESPONSE);
+        var dialog = new DialogModel(userModel, dialogRequest.getDialog());
         ticket.setDialogs(List.of(dialog));
         userModel.getTickets().add(ticket);
         customerService.saveUser(userModel);
-        return ticketMapper.ticketModelToTicket(ticket);
+        return ticketMapper.ticketModelToTicket(ticketService.findTicketById(ticket.getId()));
     }
 
     @PostMapping("/tickets/{ticketId}")
     public Ticket addDialogToTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @RequestBody @Valid AddTicketDialogRequest dialogRequest) throws ApplicationException {
-        TicketModel ticket = ticketService.findUserTicketById(user.getId(), ticketId).orElseThrow(TicketNotFoundException::new);
+        TicketModel ticketModel = ticketService.findUserTicketById(user.getId(), ticketId);
+        if (TicketModel.State.CLOSED.equals(ticketModel.getState()))
+            throw new ClosedTicketModifyingException();
+
         UserModel userModel = customerService.findUserById(user.getId());
 
         var dialog = new DialogModel(userModel, dialogRequest.getDialog());
+        TicketModel ticket = userModel.getTickets()
+                .stream()
+                .filter(it -> it.getId().equals(ticketModel.getId()))
+                .findFirst()
+                .orElseThrow(TicketNotFoundException::new);
         ticket.getDialogs().add(dialog);
         ticket.setState(TicketModel.State.WAITING_FOR_ADMIN_RESPONSE);
-        return ticketMapper.ticketModelToTicket(ticketService.saveTicket(ticket));
+        customerService.saveUser(userModel);
+        return ticketMapper.ticketModelToTicket(ticket);
     }
 
     @DeleteMapping("/tickets/{ticketId}")
     public void deleteSingleTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId) throws ApplicationException {
-        Optional<TicketModel> ticket = ticketService.findUserTicketById(user.getId(), ticketId);
-        if (ticket.isEmpty())
-            throw new TicketNotFoundException();
-
-        ticketService.deleteTicket(ticketId);
-    }
-
-    @GetMapping("tickets/{ticketId}/dialogs")
-    public List<Dialog> getAllDialogsOfTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @PageableDefault Pageable pageable) throws ApplicationException {
-        // First, make sure this ticket belongs to this user
-        Optional<TicketModel> ticket = ticketService.findUserTicketById(user.getId(), ticketId);
-        if (ticket.isEmpty())
-            throw new TicketNotFoundException();
-
-        Page<DialogModel> dialogsOfTicket = dialogService.findDialogsOfTicket(ticket.get(), pageable);
-        return ticketMapper.dialogModelListToDialogList(dialogsOfTicket.toList());
+        TicketModel ticket = ticketService.findUserTicketById(user.getId(), ticketId);
+        UserModel userModel = customerService.findUserById(user.getId());
+        userModel.getTickets().remove(ticket);
+        customerService.saveUser(userModel);
     }
 
     @GetMapping("tickets/{ticketId}/dialogs/{dialogId}")
     public Dialog getDialogOfTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @PathVariable UUID dialogId) throws ApplicationException {
-        Optional<TicketModel> ticket = ticketService.findUserTicketById(user.getId(), ticketId);
-        if (ticket.isEmpty())
-            throw new TicketNotFoundException();
+        TicketModel ticket = ticketService.findUserTicketById(user.getId(), ticketId);
 
-        DialogModel dialogModel = ticket.get().getDialogs()
+        DialogModel dialogModel = ticket.getDialogs()
                 .stream()
                 .filter(dialog -> dialog.getId().equals(dialogId))
                 .findFirst()
                 .orElseThrow(DialogNotFoundException::new);
 
         return ticketMapper.dialogModelToDialog(dialogModel);
-    }
-
-    @DeleteMapping("ticket/{ticketId}/dialogs/{dialogId}")
-    public void deleteSingleDialog(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @PathVariable UUID dialogId) throws ApplicationException {
-        Optional<TicketModel> ticket = ticketService.findUserTicketById(user.getId(), ticketId);
-        if (ticket.isEmpty())
-            throw new TicketNotFoundException();
-
-        ticket.get().getDialogs()
-                .stream()
-                .filter(dialog -> dialog.getId().equals(dialogId))
-                .findFirst()
-                .orElseThrow(DialogNotFoundException::new);
-
-        ticketService.deleteDialog(dialogId);
     }
 
     @GetMapping("/userinfo")

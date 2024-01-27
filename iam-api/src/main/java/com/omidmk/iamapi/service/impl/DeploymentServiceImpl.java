@@ -1,5 +1,6 @@
 package com.omidmk.iamapi.service.impl;
 
+import com.omidmk.iamapi.exception.DeploymentNotFoundException;
 import com.omidmk.iamapi.exception.RealmAlreadyExistException;
 import com.omidmk.iamapi.exception.UserNotFoundException;
 import com.omidmk.iamapi.model.deployment.DeploymentModel;
@@ -46,10 +47,10 @@ public class DeploymentServiceImpl implements DeploymentService {
         return foundDeployment.isEmpty() || foundDeployment.get().getState().equals(DeploymentModel.State.FAILED_TO_DEPLOY);
     }
 
-    public Optional<DeploymentModel> findDeploymentOfUserById(UUID userId, UUID deploymentId) throws UserNotFoundException {
+    public DeploymentModel findDeploymentOfUserById(UUID userId, UUID deploymentId) throws UserNotFoundException, DeploymentNotFoundException {
         UserModel user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-        return deploymentRepository.findByIdAndUser(deploymentId, user);
+        return deploymentRepository.findByIdAndUser(deploymentId, user).orElseThrow(DeploymentNotFoundException::new);
     }
 
     @Override

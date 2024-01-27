@@ -19,7 +19,7 @@ public class DeploymentModel {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     private UserModel user;
 
     @Column(nullable = false, updatable = false, unique = true)

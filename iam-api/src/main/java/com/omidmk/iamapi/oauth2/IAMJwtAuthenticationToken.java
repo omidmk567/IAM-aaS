@@ -43,6 +43,8 @@ public class IAMJwtAuthenticationToken extends JwtAuthenticationToken {
         if (userModel.getLastName() == null && lastName != null)
             userModel.setLastName(lastName);
 
+        userModel.setIsAdmin(isAdmin);
+
         return customerService.saveUser(userModel);
     }
 }

@@ -1,6 +1,5 @@
 package com.omidmk.iamapi.service.impl;
 
-import com.omidmk.iamapi.exception.ApplicationException;
 import com.omidmk.iamapi.exception.TicketNotFoundException;
 import com.omidmk.iamapi.exception.UserNotFoundException;
 import com.omidmk.iamapi.model.ticket.TicketModel;
@@ -14,7 +13,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -36,10 +34,10 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public Optional<TicketModel> findUserTicketById(UUID userId, UUID ticketId) throws ApplicationException {
+    public TicketModel findUserTicketById(UUID userId, UUID ticketId) throws UserNotFoundException, TicketNotFoundException {
         UserModel userModel = customerService.findUserById(userId);
 
-        return ticketRepository.findByIdAndCustomer(ticketId, userModel);
+        return ticketRepository.findByIdAndCustomer(ticketId, userModel).orElseThrow(TicketNotFoundException::new);
     }
 
     @Override
