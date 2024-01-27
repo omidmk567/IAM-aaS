@@ -1,12 +1,8 @@
-iam-api: {
-    add user role to DTOs and models
-    customer:
-        create deployment
-        scheduler(s)
-    admin:
-
-}
-
-iam-ui: {
-    add to docker compose,
-}
+1. scheduler
+2. locale and translations
+3. test profile prod
+4. latest keycloak version
+5. latest spring-boot version
+6. optional: review data model and rewrite them with different relationship maintainers
+7. optional: review IAMUser...
+8. add simple frontend
