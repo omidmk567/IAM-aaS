@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-import static com.omidmk.iamapi.config.SwaggerConfig.BEARER_TOKEN_SECURITY_SCHEME;
+import static com.omidmk.iamapi.config.SwaggerConfiguration.BEARER_TOKEN_SECURITY_SCHEME;
 
 @RestController
 @RequestMapping("/v1/admin")

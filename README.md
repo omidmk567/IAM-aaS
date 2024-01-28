@@ -4,7 +4,7 @@ This repository contains the codebase for IAM-aaS, an Identity and Access Manage
 ## Getting Started
 ### Prerequisites
 - Docker and Docker Compose installed on your system
-- Java 21 or higher
+- Java 17 or higher
 - Maven
 
 ### Setup

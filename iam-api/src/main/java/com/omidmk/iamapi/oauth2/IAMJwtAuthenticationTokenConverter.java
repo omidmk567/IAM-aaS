@@ -50,7 +50,7 @@ public class IAMJwtAuthenticationTokenConverter implements Converter<Jwt, Abstra
             if ((resource = (Map<?, ?>) resourceAccess.get(clientId)) != null && (resourceRoles = (Collection<?>) resource.get("roles")) != null) {
                 Stream<SimpleGrantedAuthority> roles = resourceRoles
                         .stream()
-                        .map(role -> new SimpleGrantedAuthority(STR."ROLE_\{role}"));
+                        .map(role -> new SimpleGrantedAuthority("ROLE_%s".formatted(role)));
                 rolesStream = Stream.concat(rolesStream, roles);
             }
         }

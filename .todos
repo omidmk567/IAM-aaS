@@ -7,3 +7,5 @@
 7. optional: review data model and rewrite them with different relationship maintainers
 8. optional: review IAMUser...
 9. add simple frontend
+10. add swagger description
+11. add javadoc

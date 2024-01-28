@@ -66,7 +66,7 @@ public class CustomerController {
             new SecureRandom().nextBytes(passwordBytes);
             final var username = "admin";
             final var password = new String(Base64.getEncoder().encode(passwordBytes));
-            final var realmUrl = STR."\{keycloakProperties.getBaseUrl()}/admin/\{requestBody.getRealmName()}/console";
+            final var realmUrl = "%s/admin/%s/console".formatted(keycloakProperties.getBaseUrl(), requestBody.getRealmName());
             keycloakService.createRealm(requestBody.getRealmName());
             keycloakService.createAdminUser(requestBody.getRealmName(), username, password, true);
             mailService.sendCustomerCredentials(user.getEmail(), username, password, realmUrl);

@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class SwaggerConfig {
+public class SwaggerConfiguration {
 
     public static final String BEARER_TOKEN_SECURITY_SCHEME = "bearer-token";
 
