@@ -11,7 +11,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "deployment")
+@Table(name = "deployments")
 @Data
 @NoArgsConstructor
 public class DeploymentModel {
@@ -29,6 +29,7 @@ public class DeploymentModel {
     private PlanDV plan;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private State state;
 
     @CreationTimestamp

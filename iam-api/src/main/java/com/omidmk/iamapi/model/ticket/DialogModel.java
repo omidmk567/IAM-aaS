@@ -24,7 +24,7 @@ public class DialogModel {
     @ManyToOne
     private TicketModel ticket;
 
-    @Column(updatable = false)
+    @Column(updatable = false, nullable = false)
     private String text;
 
     @CreationTimestamp
