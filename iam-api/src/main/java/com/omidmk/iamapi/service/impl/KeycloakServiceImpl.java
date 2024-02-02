@@ -161,4 +161,11 @@ public class KeycloakServiceImpl implements KeycloakService {
         return keycloak.realm(realm).roles().list().size();
     }
 
+    @Override
+    public boolean isRealmAvailable(String realm) {
+        return keycloak.realms()
+                .findAll()
+                .stream()
+                .noneMatch(it -> it.getRealm().equals(realm));
+    }
 }

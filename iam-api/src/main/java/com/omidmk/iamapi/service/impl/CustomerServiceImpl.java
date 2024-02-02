@@ -51,4 +51,9 @@ public class CustomerServiceImpl implements CustomerService {
     public void deleteUserById(UUID userId) {
         userRepository.deleteById(userId);
     }
+
+    @Override
+    public void deleteUser(UserModel userModel) {
+        userRepository.delete(userModel);
+    }
 }

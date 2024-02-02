@@ -20,4 +20,6 @@ public interface KeycloakService {
     int getRealmGroupsCount(String realm) throws ApplicationException;
 
     int getRealmRolesCount(String realm) throws ApplicationException;
+
+    boolean isRealmAvailable(String realm);
 }

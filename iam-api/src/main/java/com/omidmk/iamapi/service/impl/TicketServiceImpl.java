@@ -1,12 +1,10 @@
 package com.omidmk.iamapi.service.impl;
 
 import com.omidmk.iamapi.exception.TicketNotFoundException;
-import com.omidmk.iamapi.exception.UserNotFoundException;
 import com.omidmk.iamapi.model.ticket.TicketModel;
 import com.omidmk.iamapi.model.user.UserModel;
 import com.omidmk.iamapi.repository.DialogRepository;
 import com.omidmk.iamapi.repository.TicketRepository;
-import com.omidmk.iamapi.service.CustomerService;
 import com.omidmk.iamapi.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,23 +18,18 @@ import java.util.UUID;
 public class TicketServiceImpl implements TicketService {
     private final TicketRepository ticketRepository;
     private final DialogRepository dialogRepository;
-    private final CustomerService customerService;
 
     @Override
     public Page<TicketModel> findAllTickets(Pageable pageable) {
         return ticketRepository.findAll(pageable);
     }
 
-    public Page<TicketModel> findAllTicketsByUserId(UUID userId, Pageable pageable) throws UserNotFoundException {
-        UserModel userModel = customerService.findUserById(userId);
-
+    public Page<TicketModel> findAllTicketsOfUser(UserModel userModel, Pageable pageable) {
         return ticketRepository.findAllByCustomerIs(userModel, pageable);
     }
 
     @Override
-    public TicketModel findUserTicketById(UUID userId, UUID ticketId) throws UserNotFoundException, TicketNotFoundException {
-        UserModel userModel = customerService.findUserById(userId);
-
+    public TicketModel findUserTicketById(UserModel userModel, UUID ticketId) throws TicketNotFoundException {
         return ticketRepository.findByIdAndCustomer(ticketId, userModel).orElseThrow(TicketNotFoundException::new);
     }
 
@@ -67,6 +60,11 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public void deleteTicket(UUID ticketId) {
         ticketRepository.deleteById(ticketId);
+    }
+
+    @Override
+    public void deleteTicket(TicketModel ticketModel) {
+        ticketRepository.delete(ticketModel);
     }
 
     @Override

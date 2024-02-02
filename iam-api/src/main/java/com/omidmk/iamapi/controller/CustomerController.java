@@ -10,8 +10,9 @@ import com.omidmk.iamapi.model.deployment.DeploymentModel;
 import com.omidmk.iamapi.model.ticket.DialogModel;
 import com.omidmk.iamapi.model.ticket.TicketModel;
 import com.omidmk.iamapi.model.user.UserModel;
-import com.omidmk.iamapi.oauth2.model.IAMUser;
 import com.omidmk.iamapi.service.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.QueryParam;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
+import static com.omidmk.iamapi.config.SwaggerConfiguration.BEARER_TOKEN_SECURITY_SCHEME;
+
 @RestController
 @RequestMapping("/v1/customer")
 @RequiredArgsConstructor
@@ -40,7 +43,6 @@ public class CustomerController {
     private final KeycloakService keycloakService;
     private final MailService mailService;
     private final TicketService ticketService;
-    private final CustomerService customerService;
 
     private final KeycloakProperties keycloakProperties;
     private final DeploymentMapper deploymentMapper;
@@ -52,7 +54,8 @@ public class CustomerController {
 
     @PostMapping("/deployments")
     @ResponseStatus(HttpStatus.CREATED)
-    public Deployment createDeployment(@AuthenticationPrincipal IAMUser user, @RequestBody @Valid CreateDeploymentDTO requestBody) throws ApplicationException {
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public Deployment createDeployment(@AuthenticationPrincipal UserModel user, @RequestBody @Valid CreateDeploymentDTO requestBody) throws ApplicationException {
         if (user.getBalance() <= 0)
             throw new BalanceNotEnoughException();
 
@@ -61,7 +64,7 @@ public class CustomerController {
 
         var deployment = new DeploymentModel();
         try {
-            deployment = deploymentService.createDeployment(user.getId(), requestBody.getRealmName(), requestBody.getPlan());
+            deployment = deploymentService.createDeployment(user, requestBody.getRealmName(), requestBody.getPlan());
             final var passwordBytes = new byte[16];
             new SecureRandom().nextBytes(passwordBytes);
             final var username = "admin";
@@ -80,9 +83,10 @@ public class CustomerController {
             deployment.setState(DeploymentModel.State.DEPLOYED);
         } catch (ApplicationException ex) {
             log.error("Application Error occurred on creating deployment. {}", ex.getMessage(), ex);
-            deployment.setState(DeploymentModel.State.FAILED_TO_DEPLOY);
-            if (!(ex instanceof RealmAlreadyExistException))
+            if (!(ex instanceof RealmAlreadyExistException)) {
+                deployment.setState(DeploymentModel.State.FAILED_TO_DEPLOY);
                 keycloakService.deleteRealm(requestBody.getRealmName());
+            }
             throw ex;
         } catch (RuntimeException ex) {
             log.error("Runtime Error occurred on creating deployment. {}", ex.getMessage(), ex);
@@ -96,98 +100,97 @@ public class CustomerController {
     }
 
     @GetMapping("/deployments")
-    public List<Deployment> getDeployments(@AuthenticationPrincipal IAMUser user, @PageableDefault Pageable pageable) throws UserNotFoundException {
-        Page<DeploymentModel> deployments = deploymentService.findDeploymentsOfUser(user.getId(), pageable);
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public List<Deployment> getDeployments(@AuthenticationPrincipal UserModel user, @PageableDefault Pageable pageable) {
+        Page<DeploymentModel> deployments = deploymentService.findDeploymentsOfUser(user, pageable);
         return deploymentMapper.deploymentModelListToDeploymentList(deployments.toList());
     }
 
     @GetMapping("/deployments/{deploymentId}")
-    public Deployment getSingleDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId) throws ApplicationException {
-        DeploymentModel deployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public Deployment getSingleDeployment(@AuthenticationPrincipal UserModel user, @PathVariable UUID deploymentId) throws ApplicationException {
+        DeploymentModel deployment = deploymentService.findDeploymentOfUser(user, deploymentId);
 
         return deploymentMapper.deploymentModelToDeployment(deployment);
     }
 
     @PutMapping("/deployments/{deploymentId}")
-    public Deployment updateDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId, @RequestBody @Valid UpdateDeploymentDTO updateDeploymentRequest) throws ApplicationException{
-        DeploymentModel oldDeployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public Deployment updateDeployment(@AuthenticationPrincipal UserModel user, @PathVariable UUID deploymentId, @RequestBody @Valid UpdateDeploymentDTO updateDeploymentRequest) throws ApplicationException{
+        DeploymentModel oldDeployment = deploymentService.findDeploymentOfUser(user, deploymentId);
 
         oldDeployment.setPlan(updateDeploymentRequest.getPlan());
         return deploymentMapper.deploymentModelToDeployment(deploymentService.saveDeployment(oldDeployment));
     }
 
     @DeleteMapping("/deployments/{deploymentId}")
-    public void deleteDeployment(@AuthenticationPrincipal IAMUser user, @PathVariable UUID deploymentId) throws ApplicationException {
-        DeploymentModel deployment = deploymentService.findDeploymentOfUserById(user.getId(), deploymentId);
-        UserModel userModel = customerService.findUserById(user.getId());
-        userModel.getDeployments().remove(deployment);
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public void deleteDeployment(@AuthenticationPrincipal UserModel user, @PathVariable UUID deploymentId) throws ApplicationException {
+        DeploymentModel deployment = deploymentService.findDeploymentOfUser(user, deploymentId);
 
+        deploymentService.deleteDeployment(deployment);
         keycloakService.deleteRealm(deployment.getRealmName());
-        customerService.saveUser(userModel);
     }
 
     @GetMapping("/deployments/available")
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
     public boolean isRealmAvailable(@QueryParam("realmName") String realmName) {
-        return deploymentService.isRealmAvailable(realmName);
+        return deploymentService.isRealmAvailable(realmName) && keycloakService.isRealmAvailable(realmName);
     }
 
     @GetMapping("/tickets")
-    public List<Ticket> getAllTickets(@AuthenticationPrincipal IAMUser user, @PageableDefault Pageable pageable) throws ApplicationException {
-        Page<TicketModel> allTickets = ticketService.findAllTicketsByUserId(user.getId(), pageable);
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public List<Ticket> getAllTickets(@AuthenticationPrincipal UserModel user, @PageableDefault Pageable pageable) {
+        Page<TicketModel> allTickets = ticketService.findAllTicketsOfUser(user, pageable);
         return ticketMapper.ticketModelListToTicketList(allTickets.toList());
     }
 
     @GetMapping("/tickets/{ticketId}")
-    public Ticket getSingleTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId) throws ApplicationException {
-        TicketModel userTicket = ticketService.findUserTicketById(user.getId(), ticketId);
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public Ticket getSingleTicket(@AuthenticationPrincipal UserModel user, @PathVariable UUID ticketId) throws ApplicationException {
+        TicketModel userTicket = ticketService.findUserTicketById(user, ticketId);
 
         return ticketMapper.ticketModelToTicket(userTicket);
     }
 
     @PostMapping("/tickets")
-    public Ticket createNewTicket(@AuthenticationPrincipal IAMUser user, @RequestBody @Valid AddTicketDialogRequest dialogRequest) throws UserNotFoundException, TicketNotFoundException {
-        UserModel userModel = customerService.findUserById(user.getId());
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public Ticket createNewTicket(@AuthenticationPrincipal UserModel user, @RequestBody @Valid AddTicketDialogRequest dialogRequest) {
         var ticket = new TicketModel();
-        ticket.setCustomer(userModel);
+        ticket.setCustomer(user);
         ticket.setState(TicketModel.State.WAITING_FOR_ADMIN_RESPONSE);
-        var dialog = new DialogModel(userModel, dialogRequest.getDialog());
+        var dialog = new DialogModel(user, dialogRequest.getDialog());
         ticket.setDialogs(List.of(dialog));
-        userModel.getTickets().add(ticket);
-        customerService.saveUser(userModel);
-        return ticketMapper.ticketModelToTicket(ticketService.findTicketById(ticket.getId()));
+        ticket = ticketService.saveTicket(ticket);
+        return ticketMapper.ticketModelToTicket(ticket);
     }
 
     @PostMapping("/tickets/{ticketId}")
-    public Ticket addDialogToTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @RequestBody @Valid AddTicketDialogRequest dialogRequest) throws ApplicationException {
-        TicketModel ticketModel = ticketService.findUserTicketById(user.getId(), ticketId);
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public Ticket addDialogToTicket(@AuthenticationPrincipal UserModel user, @PathVariable UUID ticketId, @RequestBody @Valid AddTicketDialogRequest dialogRequest) throws ApplicationException {
+        TicketModel ticketModel = ticketService.findUserTicketById(user, ticketId);
         if (TicketModel.State.CLOSED.equals(ticketModel.getState()))
             throw new ClosedTicketModifyingException();
 
-        UserModel userModel = customerService.findUserById(user.getId());
-
-        var dialog = new DialogModel(userModel, dialogRequest.getDialog());
-        TicketModel ticket = userModel.getTickets()
-                .stream()
-                .filter(it -> it.getId().equals(ticketModel.getId()))
-                .findFirst()
-                .orElseThrow(TicketNotFoundException::new);
+        var dialog = new DialogModel(user, dialogRequest.getDialog());
+        TicketModel ticket = ticketService.findTicketById(ticketId);
         ticket.getDialogs().add(dialog);
         ticket.setState(TicketModel.State.WAITING_FOR_ADMIN_RESPONSE);
-        customerService.saveUser(userModel);
+        ticket = ticketService.saveTicket(ticket);
         return ticketMapper.ticketModelToTicket(ticket);
     }
 
     @DeleteMapping("/tickets/{ticketId}")
-    public void deleteSingleTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId) throws ApplicationException {
-        TicketModel ticket = ticketService.findUserTicketById(user.getId(), ticketId);
-        UserModel userModel = customerService.findUserById(user.getId());
-        userModel.getTickets().remove(ticket);
-        customerService.saveUser(userModel);
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public void deleteSingleTicket(@AuthenticationPrincipal UserModel user, @PathVariable UUID ticketId) throws ApplicationException {
+        TicketModel ticket = ticketService.findUserTicketById(user, ticketId);
+        ticketService.deleteTicket(ticket);
     }
 
     @GetMapping("tickets/{ticketId}/dialogs/{dialogId}")
-    public Dialog getDialogOfTicket(@AuthenticationPrincipal IAMUser user, @PathVariable UUID ticketId, @PathVariable UUID dialogId) throws ApplicationException {
-        TicketModel ticket = ticketService.findUserTicketById(user.getId(), ticketId);
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public Dialog getDialogOfTicket(@AuthenticationPrincipal UserModel user, @PathVariable UUID ticketId, @PathVariable UUID dialogId) throws ApplicationException {
+        TicketModel ticket = ticketService.findUserTicketById(user, ticketId);
 
         DialogModel dialogModel = ticket.getDialogs()
                 .stream()
@@ -199,8 +202,8 @@ public class CustomerController {
     }
 
     @GetMapping("/userinfo")
-    public Customer getUserInfo(@AuthenticationPrincipal IAMUser user) throws UserNotFoundException {
-        UserModel userModel = customerService.findUserById(user.getId());
-        return userMapper.userModelToCustomer(userModel);
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public Customer getUserInfo(@AuthenticationPrincipal UserModel user) {
+        return userMapper.userModelToCustomer(user);
     }
 }

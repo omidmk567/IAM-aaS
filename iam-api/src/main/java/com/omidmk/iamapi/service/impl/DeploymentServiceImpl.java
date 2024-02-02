@@ -2,12 +2,10 @@ package com.omidmk.iamapi.service.impl;
 
 import com.omidmk.iamapi.exception.DeploymentNotFoundException;
 import com.omidmk.iamapi.exception.RealmAlreadyExistException;
-import com.omidmk.iamapi.exception.UserNotFoundException;
 import com.omidmk.iamapi.model.deployment.DeploymentModel;
 import com.omidmk.iamapi.model.deployment.PlanDV;
 import com.omidmk.iamapi.model.user.UserModel;
 import com.omidmk.iamapi.repository.DeploymentRepository;
-import com.omidmk.iamapi.repository.UserRepository;
 import com.omidmk.iamapi.service.DeploymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,23 +19,21 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DeploymentServiceImpl implements DeploymentService {
     private final DeploymentRepository deploymentRepository;
-    private final UserRepository userRepository;
 
     @Override
-    public DeploymentModel createDeployment(UUID userId, String realmName, PlanDV planDV) throws RealmAlreadyExistException, UserNotFoundException {
-        UserModel userModel = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+    public DeploymentModel createDeployment(UserModel userModel, String realmName, PlanDV planDV) throws RealmAlreadyExistException {
         if (!isRealmAvailable(realmName))
             throw new RealmAlreadyExistException();
 
         Optional<DeploymentModel> foundDeployment = deploymentRepository.findByRealmName(realmName);
         // if its found and the state is FAILED_TO_DEPLOY, lets try again
+        foundDeployment.ifPresent(deploymentModel -> {
+            deploymentModel.setState(DeploymentModel.State.DEPLOYING);
+            deploymentModel.setPlan(planDV);
+        });
         var deployment = foundDeployment.orElseGet(() -> new DeploymentModel(userModel, realmName, planDV, DeploymentModel.State.DEPLOYING));
-        userModel.getDeployments().add(deployment);
-        return userRepository.save(userModel).getDeployments()
-                .stream()
-                .filter(d -> d.getRealmName().equals(realmName))
-                .findFirst()
-                .orElseThrow();
+
+        return deploymentRepository.save(deployment);
     }
 
     @Override
@@ -47,17 +43,13 @@ public class DeploymentServiceImpl implements DeploymentService {
         return foundDeployment.isEmpty() || foundDeployment.get().getState().equals(DeploymentModel.State.FAILED_TO_DEPLOY);
     }
 
-    public DeploymentModel findDeploymentOfUserById(UUID userId, UUID deploymentId) throws UserNotFoundException, DeploymentNotFoundException {
-        UserModel user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-
-        return deploymentRepository.findByIdAndUser(deploymentId, user).orElseThrow(DeploymentNotFoundException::new);
+    public DeploymentModel findDeploymentOfUser(UserModel userModel, UUID deploymentId) throws DeploymentNotFoundException {
+        return deploymentRepository.findByIdAndUser(deploymentId, userModel).orElseThrow(DeploymentNotFoundException::new);
     }
 
     @Override
-    public Page<DeploymentModel> findDeploymentsOfUser(UUID userId, Pageable pageable) throws UserNotFoundException {
-        UserModel user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-
-        return deploymentRepository.findAllByUser(user, pageable);
+    public Page<DeploymentModel> findDeploymentsOfUser(UserModel userModel, Pageable pageable) {
+        return deploymentRepository.findAllByUser(userModel, pageable);
     }
 
     @Override
@@ -68,6 +60,11 @@ public class DeploymentServiceImpl implements DeploymentService {
     @Override
     public void deleteDeployment(UUID deploymentId) {
         deploymentRepository.deleteById(deploymentId);
+    }
+
+    @Override
+    public void deleteDeployment(DeploymentModel deploymentModel) {
+        deploymentRepository.delete(deploymentModel);
     }
 
     @Override

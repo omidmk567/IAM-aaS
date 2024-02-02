@@ -1,6 +1,5 @@
 package com.omidmk.iamapi.oauth2;
 
-import com.omidmk.iamapi.mapper.UserMapper;
 import com.omidmk.iamapi.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +23,6 @@ import java.util.stream.Stream;
 public class IAMJwtAuthenticationTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
     private static final JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
     private final CustomerService customerService;
-    private final UserMapper userMapper;
 
     @Value("${app.iam-aas.jwt.role.converter.clients}")
     private List<String> clientIds;
@@ -37,7 +35,7 @@ public class IAMJwtAuthenticationTokenConverter implements Converter<Jwt, Abstra
         Collection<GrantedAuthority> authorities = Stream
                 .concat(jwtGrantedAuthoritiesConverter.convert(jwt).stream(), extractResourceRoles(jwt).stream())
                 .toList();
-        return new IAMJwtAuthenticationToken(customerService, userMapper, customerInitialCredit, jwt, authorities);
+        return new IAMJwtAuthenticationToken(customerService, customerInitialCredit, jwt, authorities);
     }
 
     private Collection<? extends GrantedAuthority> extractResourceRoles(Jwt jwt) {
