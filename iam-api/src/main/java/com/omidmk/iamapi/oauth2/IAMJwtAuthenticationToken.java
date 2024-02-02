@@ -12,9 +12,9 @@ import java.util.Collection;
 @Transient
 public class IAMJwtAuthenticationToken extends JwtAuthenticationToken {
     private final CustomerService customerService;
-    private final Long customerInitialCredit;
+    private final float customerInitialCredit;
 
-    public IAMJwtAuthenticationToken(CustomerService customerService, Long customerInitialCredit, Jwt jwt, Collection<? extends GrantedAuthority> authorities) {
+    public IAMJwtAuthenticationToken(CustomerService customerService, float customerInitialCredit, Jwt jwt, Collection<? extends GrantedAuthority> authorities) {
         super(jwt, authorities, jwt.getClaim("preferred_username"));
         this.customerService = customerService;
         this.customerInitialCredit = customerInitialCredit;

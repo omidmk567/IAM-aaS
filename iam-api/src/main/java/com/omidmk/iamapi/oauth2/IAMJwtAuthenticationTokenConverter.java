@@ -28,7 +28,7 @@ public class IAMJwtAuthenticationTokenConverter implements Converter<Jwt, Abstra
     private List<String> clientIds;
 
     @Value("${app.iam-aas.customer-initial-credit:100}")
-    private Long customerInitialCredit;
+    private Float customerInitialCredit;
 
     @Override
     public AbstractAuthenticationToken convert(@NonNull Jwt jwt) {

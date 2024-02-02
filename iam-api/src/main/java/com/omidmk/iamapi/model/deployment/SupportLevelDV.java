@@ -13,7 +13,6 @@ public enum SupportLevelDV {
     EXPERT("Expert", Set.of(MAILING_CHANNEL, TICKETING_CHANNEL, ON_CALLING_CHANNEL, DEDICATED_INSTANCE, HOURLY_RESPONSE_TIME, UPTIME_99_PERCENT_COMMITMENT));
 
     private final String title;
-
     private final Set<Service> services;
 
     SupportLevelDV(String title, Set<Service> services) {

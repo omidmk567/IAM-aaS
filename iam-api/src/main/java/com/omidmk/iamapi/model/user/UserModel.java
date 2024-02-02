@@ -31,7 +31,7 @@ public class UserModel {
     private String lastName;
 
     @Column(nullable = false)
-    private Long balance;
+    private Float balance;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -45,10 +45,10 @@ public class UserModel {
     private Long version;
 
     public UserModel(String email, boolean isAdmin, String firstName, String lastName) {
-        this(email, isAdmin, firstName, lastName, 100L);
+        this(email, isAdmin, firstName, lastName, 100f);
     }
 
-    public UserModel(String email, boolean isAdmin, String firstName, String lastName, Long balance) {
+    public UserModel(String email, boolean isAdmin, String firstName, String lastName, Float balance) {
         this.email = email;
         this.isAdmin = isAdmin;
         this.firstName = firstName;

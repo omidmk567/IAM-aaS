@@ -13,13 +13,13 @@ public interface KeycloakService {
 
     void disableRealm(String realm) throws RealmNotFoundException;
 
-    int getRealmUsersCount(String realm) throws ApplicationException;
+    int getRealmUsersCount(String realm) throws RealmNotFoundException;
 
-    int getRealmClientsCount(String realm) throws ApplicationException;
+    int getRealmClientsCount(String realm) throws RealmNotFoundException;
 
-    int getRealmGroupsCount(String realm) throws ApplicationException;
+    int getRealmGroupsCount(String realm) throws RealmNotFoundException;
 
-    int getRealmRolesCount(String realm) throws ApplicationException;
+    int getRealmRolesCount(String realm) throws RealmNotFoundException;
 
     boolean isRealmAvailable(String realm);
 }

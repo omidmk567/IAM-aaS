@@ -1,11 +1,7 @@
-1. scheduler
-2. locale and translations
-3. check if I should use flyway, liquibase, jooq and etc.
-4. test profile prod
-5. latest keycloak version
-6. latest spring-boot version
-7. optional: review data model and rewrite them with different relationship maintainers
-8. optional: review IAMUser...
-9. add simple frontend
-10. add swagger description
-11. add javadoc
+1. locale and translations
+2. test profile prod
+3. latest keycloak version
+4. latest spring-boot version
+5. add simple frontend
+6. add swagger description
+7. add javadoc

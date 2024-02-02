@@ -1,6 +1,7 @@
 package com.omidmk.iamapi.controller.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 @Data
@@ -9,5 +10,6 @@ public class UpdateCustomerDTO {
     private String id;
     private String firstName;
     private String lastName;
-    private Long balance;
+    @PositiveOrZero
+    private Float balance;
 }

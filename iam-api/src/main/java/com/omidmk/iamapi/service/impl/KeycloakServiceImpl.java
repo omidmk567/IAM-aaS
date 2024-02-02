@@ -117,7 +117,7 @@ public class KeycloakServiceImpl implements KeycloakService {
         log.info("Realm {} has been disabled", realm);
     }
 
-    public int getRealmUsersCount(String realm) throws ApplicationException {
+    public int getRealmUsersCount(String realm) throws RealmNotFoundException {
         keycloak.realms()
                 .findAll()
                 .stream()
@@ -128,7 +128,7 @@ public class KeycloakServiceImpl implements KeycloakService {
         return keycloak.realm(realm).users().count();
     }
 
-    public int getRealmClientsCount(String realm) throws ApplicationException {
+    public int getRealmClientsCount(String realm) throws RealmNotFoundException {
         keycloak.realms()
                 .findAll()
                 .stream()
@@ -139,7 +139,7 @@ public class KeycloakServiceImpl implements KeycloakService {
         return keycloak.realm(realm).clients().findAll().size();
     }
 
-    public int getRealmGroupsCount(String realm) throws ApplicationException {
+    public int getRealmGroupsCount(String realm) throws RealmNotFoundException {
         keycloak.realms()
                 .findAll()
                 .stream()
@@ -150,7 +150,7 @@ public class KeycloakServiceImpl implements KeycloakService {
         return keycloak.realm(realm).groups().count().size(); // todo: check out this method
     }
 
-    public int getRealmRolesCount(String realm) throws ApplicationException {
+    public int getRealmRolesCount(String realm) throws RealmNotFoundException {
         keycloak.realms()
                 .findAll()
                 .stream()
