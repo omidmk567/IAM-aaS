@@ -101,6 +101,22 @@ public class KeycloakServiceImpl implements KeycloakService {
         }
     }
 
+    @Override
+    public void disableRealm(String realm) throws RealmNotFoundException {
+        keycloak.realms()
+                .findAll()
+                .stream()
+                .filter(it -> it.getRealm().equals(realm))
+                .findAny()
+                .orElseThrow(RealmNotFoundException::new);
+
+        RealmResource realmResource = keycloak.realm(realm);
+        RealmRepresentation representation = realmResource.toRepresentation();
+        representation.setEnabled(false);
+        realmResource.update(representation);
+        log.info("Realm {} has been disabled", realm);
+    }
+
     public int getRealmUsersCount(String realm) throws ApplicationException {
         keycloak.realms()
                 .findAll()

@@ -17,4 +17,6 @@ public interface DeploymentRepository extends JpaRepository<DeploymentModel, UUI
     Optional<DeploymentModel> findByIdAndUser(UUID id, UserModel user);
 
     Page<DeploymentModel> findAllByUser(UserModel user, Pageable pageable);
+
+    Page<DeploymentModel> findAllByState(DeploymentModel.State state, Pageable pageable);
 }

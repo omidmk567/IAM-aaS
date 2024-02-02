@@ -26,10 +26,10 @@ public class DeploymentServiceImpl implements DeploymentService {
     @Override
     public DeploymentModel createDeployment(UUID userId, String realmName, PlanDV planDV) throws RealmAlreadyExistException, UserNotFoundException {
         UserModel userModel = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-        Optional<DeploymentModel> foundDeployment = deploymentRepository.findByRealmName(realmName);
         if (!isRealmAvailable(realmName))
             throw new RealmAlreadyExistException();
 
+        Optional<DeploymentModel> foundDeployment = deploymentRepository.findByRealmName(realmName);
         // if its found and the state is FAILED_TO_DEPLOY, lets try again
         var deployment = foundDeployment.orElseGet(() -> new DeploymentModel(userModel, realmName, planDV, DeploymentModel.State.DEPLOYING));
         userModel.getDeployments().add(deployment);
@@ -58,6 +58,11 @@ public class DeploymentServiceImpl implements DeploymentService {
         UserModel user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
         return deploymentRepository.findAllByUser(user, pageable);
+    }
+
+    @Override
+    public Page<DeploymentModel> findAllActiveDeployments(Pageable pageable) {
+        return deploymentRepository.findAllByState(DeploymentModel.State.DEPLOYED, pageable);
     }
 
     @Override

@@ -19,6 +19,8 @@ public interface DeploymentService {
 
     Page<DeploymentModel> findDeploymentsOfUser(UUID userId, Pageable pageable) throws UserNotFoundException;
 
+    Page<DeploymentModel> findAllActiveDeployments(Pageable pageable);
+
     void deleteDeployment(UUID deploymentId);
 
     boolean isRealmAvailable(String realmName);

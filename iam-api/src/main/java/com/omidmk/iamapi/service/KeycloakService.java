@@ -11,6 +11,8 @@ public interface KeycloakService {
 
     void createAdminUser(String realm, String username, String password, boolean temporary) throws ApplicationException;
 
+    void disableRealm(String realm) throws RealmNotFoundException;
+
     int getRealmUsersCount(String realm) throws ApplicationException;
 
     int getRealmClientsCount(String realm) throws ApplicationException;
