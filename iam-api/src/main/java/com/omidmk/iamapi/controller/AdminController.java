@@ -1,12 +1,11 @@
 package com.omidmk.iamapi.controller;
 
-import com.omidmk.iamapi.controller.dto.AdminAddTicketDialogRequest;
-import com.omidmk.iamapi.controller.dto.Customer;
-import com.omidmk.iamapi.controller.dto.Ticket;
-import com.omidmk.iamapi.controller.dto.UpdateCustomerDTO;
+import com.omidmk.iamapi.controller.dto.*;
 import com.omidmk.iamapi.exception.*;
+import com.omidmk.iamapi.mapper.DeploymentMapper;
 import com.omidmk.iamapi.mapper.TicketMapper;
 import com.omidmk.iamapi.mapper.UserMapper;
+import com.omidmk.iamapi.model.deployment.DeploymentModel;
 import com.omidmk.iamapi.model.ticket.DialogModel;
 import com.omidmk.iamapi.model.ticket.TicketModel;
 import com.omidmk.iamapi.model.user.UserModel;
@@ -44,6 +43,7 @@ public class AdminController {
     private final DeploymentService deploymentService;
 
     private final UserMapper userMapper;
+    private final DeploymentMapper deploymentMapper;
     private final TicketMapper ticketMapper;
 
     @GetMapping("/customers")
@@ -101,10 +101,70 @@ public class AdminController {
         customerService.deleteUser(userModel);
     }
 
+    @GetMapping("/deployments")
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public List<Deployment> getAllDeployments(@PageableDefault Pageable pageable) {
+        Page<DeploymentModel> allDeployments = deploymentService.findAllDeployments(pageable);
+
+        return deploymentMapper.deploymentModelListToDeploymentList(allDeployments.toList());
+    }
+
+    @GetMapping("/deployments/active")
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public List<Deployment> getActiveDeployments(@PageableDefault Pageable pageable) {
+        Page<DeploymentModel> activeDeployments = deploymentService.findAllActiveDeployments(pageable);
+
+        return deploymentMapper.deploymentModelListToDeploymentList(activeDeployments.toList());
+    }
+
+    @GetMapping("/deployments/assigned")
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public List<Deployment> getAssignedDeployments(@PageableDefault Pageable pageable) {
+        Page<DeploymentModel> assignedDeployments = deploymentService.findAllAssignedDeployments(pageable);
+
+        return deploymentMapper.deploymentModelListToDeploymentList(assignedDeployments.toList());
+    }
+
+    @GetMapping("/deployments")
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public List<Deployment> getCustomerDeployments(@RequestParam UUID userId, @PageableDefault Pageable pageable) throws UserNotFoundException {
+        UserModel user = customerService.findUserById(userId);
+        Page<DeploymentModel> deploymentsOfUser = deploymentService.findDeploymentsOfUser(user, pageable);
+
+        return deploymentMapper.deploymentModelListToDeploymentList(deploymentsOfUser.toList());
+    }
+
+    @GetMapping("/deployments/{deploymentId}")
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public Deployment getSingleDeployment(@PathVariable UUID deploymentId) throws DeploymentNotFoundException {
+        DeploymentModel deploymentModel = deploymentService.findDeploymentById(deploymentId);
+
+        return deploymentMapper.deploymentModelToDeployment(deploymentModel);
+    }
+
+    @PutMapping("/deployments/{deploymentId}")
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public Deployment updateDeployment(@PathVariable UUID deploymentId, @RequestBody @Valid UpdateDeploymentDTO updateDeploymentDTO) throws DeploymentNotFoundException {
+        DeploymentModel deploymentModel = deploymentService.findDeploymentById(deploymentId);
+        deploymentModel.setPlan(updateDeploymentDTO.getPlan());
+        deploymentModel.setState(updateDeploymentDTO.getState());
+
+        return deploymentMapper.deploymentModelToDeployment(deploymentService.saveDeployment(deploymentModel));
+    }
+
+    @DeleteMapping("/deployments/{deploymentId}")
+    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
+    public void deleteDeployment(@PathVariable UUID deploymentId) throws DeploymentNotFoundException {
+        DeploymentModel deploymentModel = deploymentService.findDeploymentById(deploymentId);
+
+        deploymentService.deleteDeployment(deploymentModel);
+    }
+
     @GetMapping("/tickets")
     @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
     public List<Ticket> getAllTickets(@PageableDefault Pageable pageable) {
         Page<TicketModel> allTickets = ticketService.findAllTickets(pageable);
+
         return ticketMapper.ticketModelListToTicketList(allTickets.toList());
     }
 
@@ -113,6 +173,7 @@ public class AdminController {
     public List<Ticket> getUserTickets(@PathVariable UUID userId, @PageableDefault Pageable pageable) throws ApplicationException {
         UserModel user = customerService.findUserById(userId);
         Page<TicketModel> allTickets = ticketService.findAllTicketsOfUser(user, pageable);
+
         return ticketMapper.ticketModelListToTicketList(allTickets.toList());
     }
 
@@ -127,6 +188,7 @@ public class AdminController {
     @GetMapping("/tickets/unread")
     public List<Ticket> getUnreadTickets(@PageableDefault Pageable pageable) {
         Page<TicketModel> userTicket = ticketService.findWaitingForAdminTickets(pageable);
+
         return ticketMapper.ticketModelListToTicketList(userTicket.toList());
     }
 
@@ -134,6 +196,7 @@ public class AdminController {
     @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
     public List<Ticket> getRespondedTickets(@PageableDefault Pageable pageable) {
         Page<TicketModel> userTicket = ticketService.findWaitingForCustomerTickets(pageable);
+
         return ticketMapper.ticketModelListToTicketList(userTicket.toList());
     }
 
@@ -141,6 +204,7 @@ public class AdminController {
     @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
     public List<Ticket> getClosedTickets(@PageableDefault Pageable pageable) {
         Page<TicketModel> userTicket = ticketService.findClosedTickets(pageable);
+
         return ticketMapper.ticketModelListToTicketList(userTicket.toList());
     }
 
@@ -155,6 +219,7 @@ public class AdminController {
         ticketModel.getDialogs().add(dialog);
         ticketModel.setState(dialogRequest.getClose() ? TicketModel.State.CLOSED : TicketModel.State.WAITING_FOR_CUSTOMER_RESPONSE);
         ticketModel = ticketService.saveTicket(ticketModel);
+
         return ticketMapper.ticketModelToTicket(ticketModel);
     }
 }

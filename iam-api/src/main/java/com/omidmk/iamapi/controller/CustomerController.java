@@ -73,14 +73,14 @@ public class CustomerController {
             keycloakService.createRealm(requestBody.getRealmName());
             keycloakService.createAdminUser(requestBody.getRealmName(), username, password, true);
             mailService.sendCustomerCredentials(user.getEmail(), username, password, realmUrl);
-            deployment.setState(DeploymentModel.State.DEPLOYED);
+            deployment.setState(DeploymentModel.State.RUNNING);
         } catch (SendingMailFailedException ex) {
             log.error("Sending mail error occurred on creating deployment. {}", ex.getMessage(), ex);
             if (failOnMailError) {
                 log.warn("Fail on mail error is on.");
                 throw ex;
             }
-            deployment.setState(DeploymentModel.State.DEPLOYED);
+            deployment.setState(DeploymentModel.State.RUNNING);
         } catch (ApplicationException ex) {
             log.error("Application Error occurred on creating deployment. {}", ex.getMessage(), ex);
             if (!(ex instanceof RealmAlreadyExistException)) {
@@ -96,6 +96,7 @@ public class CustomerController {
         } finally {
             deployment = deploymentService.saveDeployment(deployment);
         }
+
         return deploymentMapper.deploymentModelToDeployment(deployment);
     }
 
@@ -103,6 +104,7 @@ public class CustomerController {
     @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
     public List<Deployment> getDeployments(@AuthenticationPrincipal UserModel user, @PageableDefault Pageable pageable) {
         Page<DeploymentModel> deployments = deploymentService.findDeploymentsOfUser(user, pageable);
+
         return deploymentMapper.deploymentModelListToDeploymentList(deployments.toList());
     }
 
@@ -118,8 +120,9 @@ public class CustomerController {
     @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
     public Deployment updateDeployment(@AuthenticationPrincipal UserModel user, @PathVariable UUID deploymentId, @RequestBody @Valid UpdateDeploymentDTO updateDeploymentRequest) throws ApplicationException{
         DeploymentModel oldDeployment = deploymentService.findDeploymentOfUser(user, deploymentId);
-
         oldDeployment.setPlan(updateDeploymentRequest.getPlan());
+        oldDeployment.setState(updateDeploymentRequest.getState());
+
         return deploymentMapper.deploymentModelToDeployment(deploymentService.saveDeployment(oldDeployment));
     }
 
@@ -162,6 +165,7 @@ public class CustomerController {
         var dialog = new DialogModel(user, dialogRequest.getDialog());
         ticket.setDialogs(List.of(dialog));
         ticket = ticketService.saveTicket(ticket);
+
         return ticketMapper.ticketModelToTicket(ticket);
     }
 
@@ -177,6 +181,7 @@ public class CustomerController {
         ticket.getDialogs().add(dialog);
         ticket.setState(TicketModel.State.WAITING_FOR_ADMIN_RESPONSE);
         ticket = ticketService.saveTicket(ticket);
+
         return ticketMapper.ticketModelToTicket(ticket);
     }
 
@@ -184,6 +189,7 @@ public class CustomerController {
     @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
     public void deleteSingleTicket(@AuthenticationPrincipal UserModel user, @PathVariable UUID ticketId) throws ApplicationException {
         TicketModel ticket = ticketService.findUserTicketById(user, ticketId);
+
         ticketService.deleteTicket(ticket);
     }
 

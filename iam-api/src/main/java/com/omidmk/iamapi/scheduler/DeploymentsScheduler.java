@@ -37,10 +37,13 @@ public class DeploymentsScheduler {
     )
     public void calculateCost() {
         log.info("About to calculate the deployments cost...");
-        Page<DeploymentModel> allActiveDeployments = deploymentService.findAllActiveDeployments(Pageable.unpaged());
+        Page<DeploymentModel> allActiveDeployments = deploymentService.findAllAssignedDeployments(Pageable.unpaged());
         allActiveDeployments.forEach(deployment -> {
             log.debug("Calculating the cost of {}", deployment);
             float costPerInterval = interval.getSeconds() * ((float) deployment.getPlan().getCostPerHour() / (60 * 60));
+            if (DeploymentModel.State.STOPPED.equals(deployment.getState()))
+                costPerInterval /= 2;
+
             UserModel user = deployment.getUser();
             user.setBalance((user.getBalance() - (costPerInterval * factor)));
             user = customerService.saveUser(user);

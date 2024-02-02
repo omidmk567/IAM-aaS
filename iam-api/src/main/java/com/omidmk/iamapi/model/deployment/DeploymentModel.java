@@ -53,7 +53,8 @@ public class DeploymentModel {
     public enum State {
         DEPLOYING,
         FAILED_TO_DEPLOY,
-        DEPLOYED,
+        RUNNING,
         STOPPED,
+        DELETED,
     }
 }
