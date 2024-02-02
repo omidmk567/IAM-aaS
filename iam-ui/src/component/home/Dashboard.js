@@ -1,22 +1,22 @@
 import {useKeycloak} from "@react-keycloak/web";
 
-export default function Home() {
+export default function Dashboard() {
     const {keycloak} = useKeycloak()
 
     return (
         <div>
-            This is the home page. You can login or logout using the buttons below.
+            <h1>Home</h1>
+            <h3>Hello <i><b>{keycloak?.tokenParsed?.preferred_username}</b></i></h3>
+            <h3>Your token is:</h3>
+            <p>{keycloak?.token}</p>
+            <button onClick={() => navigator.clipboard.writeText(keycloak?.token)}>Copy to clipboard</button>
             <br/>
             {
                 keycloak?.authenticated ?
                     <button onClick={() => keycloak.logout()}>Logout</button> :
                     <button onClick={() => keycloak.login()}>Login</button>
             }
-            <br/>
-            <br/>
-            After logging in, you can navigate to the dashboard by clicking the button below.
-            <br/>
-            <button onClick={() => window.location.href = '/dash'}>Go to Dashboard</button>
+
         </div>
     )
 }

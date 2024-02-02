@@ -4,12 +4,13 @@ import Keycloak from 'keycloak-js';
 import {BrowserRouter as Router, Route, Routes} from "react-router-dom";
 import PrivateRoute from "./component/global/PrivateRoute";
 import Home from "./component/home/Home";
+import Dashboard from "./component/home/Dashboard";
 
 function App() {
     const keycloak = new Keycloak({
         url: 'http://localhost:8080',
         realm: "IAM-aaS",
-        clientId: "iam-admins"
+        clientId: "iam-customers"
     })
     const initOptions = {pkceMethod: 'S256'}
     const handleOnEvent = async (event, error) => {
@@ -32,7 +33,7 @@ function App() {
             <Router>
                 <Routes>
                     <Route path='/' element={<Home/>}/>
-                    <Route path='/home' element={<PrivateRoute><Home/></PrivateRoute>}/>
+                    <Route path='/dash' element={<PrivateRoute><Dashboard/></PrivateRoute>}/>
                 </Routes>
             </Router>
         </ReactKeycloakProvider>

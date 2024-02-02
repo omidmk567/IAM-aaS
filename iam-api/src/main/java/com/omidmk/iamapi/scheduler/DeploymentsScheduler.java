@@ -35,7 +35,7 @@ public class DeploymentsScheduler {
             initialDelayString = "#{T(org.springframework.boot.convert.ApplicationConversionService).getSharedInstance().convert('${app.iam-aas.cost-calculator-interval}', T(java.time.Duration)).toMillis()}",
             fixedDelayString = "#{T(org.springframework.boot.convert.ApplicationConversionService).getSharedInstance().convert('${app.iam-aas.cost-calculator-interval}', T(java.time.Duration)).toMillis()}"
     )
-    public void calculate() {
+    public void calculateCost() {
         log.info("About to calculate the deployments cost...");
         Page<DeploymentModel> allActiveDeployments = deploymentService.findAllActiveDeployments(Pageable.unpaged());
         allActiveDeployments.forEach(deployment -> {
