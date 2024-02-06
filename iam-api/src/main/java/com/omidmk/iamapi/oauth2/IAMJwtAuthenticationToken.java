@@ -22,10 +22,6 @@ public class IAMJwtAuthenticationToken extends JwtAuthenticationToken {
 
     @Override
     public UserModel getPrincipal() {
-        return constructUser();
-    }
-
-    private UserModel constructUser() {
         final boolean isAdmin = getAuthorities().stream().anyMatch(auth -> auth.getAuthority().contains("admin"));
         final String email = getToken().getClaimAsString("email");
         final String firstName = getToken().getClaimAsString("given_name");
