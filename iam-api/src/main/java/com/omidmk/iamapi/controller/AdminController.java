@@ -103,7 +103,14 @@ public class AdminController {
 
     @GetMapping("/deployments")
     @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
-    public List<Deployment> getAllDeployments(@PageableDefault Pageable pageable) {
+    public List<Deployment> getAllDeployments(@RequestParam(required = false) UUID userId, @PageableDefault Pageable pageable) throws UserNotFoundException {
+        if (userId != null) {
+            UserModel user = customerService.findUserById(userId);
+            Page<DeploymentModel> deploymentsOfUser = deploymentService.findDeploymentsOfUser(user, pageable);
+
+            return deploymentMapper.deploymentModelListToDeploymentList(deploymentsOfUser.toList());
+        }
+
         Page<DeploymentModel> allDeployments = deploymentService.findAllDeployments(pageable);
 
         return deploymentMapper.deploymentModelListToDeploymentList(allDeployments.toList());
@@ -123,15 +130,6 @@ public class AdminController {
         Page<DeploymentModel> assignedDeployments = deploymentService.findAllAssignedDeployments(pageable);
 
         return deploymentMapper.deploymentModelListToDeploymentList(assignedDeployments.toList());
-    }
-
-    @GetMapping("/deployments")
-    @Operation(security = {@SecurityRequirement(name = BEARER_TOKEN_SECURITY_SCHEME)})
-    public List<Deployment> getCustomerDeployments(@RequestParam UUID userId, @PageableDefault Pageable pageable) throws UserNotFoundException {
-        UserModel user = customerService.findUserById(userId);
-        Page<DeploymentModel> deploymentsOfUser = deploymentService.findDeploymentsOfUser(user, pageable);
-
-        return deploymentMapper.deploymentModelListToDeploymentList(deploymentsOfUser.toList());
     }
 
     @GetMapping("/deployments/{deploymentId}")
