@@ -2201,7 +2201,7 @@
       "id": "33a4a203-f54c-47ae-a8a7-a558e9025f79",
       "alias": "create unique user config",
       "config": {
-        "require.password.update.after.registration": "false"
+        "require.password.update.after.registration": "true"
       }
     },
     {
@@ -2236,7 +2236,7 @@
       "name": "Update Password",
       "providerId": "UPDATE_PASSWORD",
       "enabled": true,
-      "defaultAction": true,
+      "defaultAction": false,
       "priority": 30,
       "config": {}
     },
