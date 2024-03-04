@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  release:
+    needs: build
+    continue-on-error: false
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v2
+      with:
+        java-version: '17'
+
+    - name: Build and package release artifacts
+      run: |
+        mvn -B clean package --file iam-api/pom.xml
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-artifacts
+        path: iam-api/target/*.jar
