@@ -12,7 +12,6 @@ on:
 
 jobs:
   release:
-    needs: build
     continue-on-error: false
     runs-on: ubuntu-latest
 
