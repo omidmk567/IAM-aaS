@@ -1,0 +1,24 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches-ignore:
+      - '*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Deploy to production
+        run: |
+          ssh -i ${{ secrets.SSH_KEY }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cd /home/omidmk/iam-api && docker-compose pull && docker-compose up -d"
