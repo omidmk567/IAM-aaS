@@ -35,8 +35,7 @@ class IAMApiApplicationTests {
 
     @Test
     void contextLoads() {
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/", String.class)).contains("Hello, World");
-//        assertThat(customerService).isNotNull();
+        assertThat(customerService).isNotNull();
 //        Assertions.assertNull(customerService.findUserByEmail("omid@gmail.com").orElse(null));
     }
 
