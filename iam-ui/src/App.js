@@ -1,43 +1,56 @@
-import './App.css';
-import {ReactKeycloakProvider} from '@react-keycloak/web';
-import Keycloak from 'keycloak-js';
-import {BrowserRouter as Router, Route, Routes} from "react-router-dom";
+import "./App.css";
+import { ReactKeycloakProvider } from "@react-keycloak/web";
+import Keycloak from "keycloak-js";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import PrivateRoute from "./component/global/PrivateRoute";
 import Home from "./component/home/Home";
 import Dashboard from "./component/home/Dashboard";
 
 function App() {
-    const keycloak = new Keycloak({
-        url: 'http://localhost:8080',
-        realm: "IAM-aaS",
-        clientId: "iam-customers"
-    })
-    const initOptions = {pkceMethod: 'S256'}
-    const handleOnEvent = async (event, error) => {
-        console.log(event, error)
-    }
+  const keycloak = new Keycloak({
+    url: "http://localhost:8080",
+    realm: "IAM-aaS",
+    clientId: "iam-customers",
+  });
+  const initOptions = {pkceMethod: "S256"};
+  const handleOnEvent = async (event, error) => {
+    console.log(event, error);
+  };
 
-    const loadingComponent = (
-        <div>
-            <h1>Loading...</h1>
-        </div>
-    )
+  const loadingComponent = (
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100%"
+      }}>
+        <span className="loader">  </span>
+        <span style={{marginTop: "20px"}}>Loading</span>
+      </div>
+  );
 
-    return (
-        <ReactKeycloakProvider
-            authClient={keycloak}
-            initOptions={initOptions}
-            LoadingComponent={loadingComponent}
-            onEvent={(event, error) => handleOnEvent(event, error)}
-        >
-            <Router>
-                <Routes>
-                    <Route path='/' element={<Home/>}/>
-                    <Route path='/dash' element={<PrivateRoute><Dashboard/></PrivateRoute>}/>
-                </Routes>
-            </Router>
-        </ReactKeycloakProvider>
-    )
+  return (
+      <ReactKeycloakProvider
+          authClient={keycloak}
+          initOptions={initOptions}
+          LoadingComponent={loadingComponent}
+          onEvent={(event, error) => handleOnEvent(event, error)}>
+        <Router>
+          <Routes>
+            <Route path='/' element={<Home/>}/>
+            <Route
+                path='/dash'
+                element={
+                  <PrivateRoute>
+                    <Dashboard/>
+                  </PrivateRoute>
+                }
+            />
+          </Routes>
+        </Router>
+      </ReactKeycloakProvider>
+  );
 }
 
 export default App;
