@@ -9,7 +9,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=iam-password
     ports:
-      - "5432"
+      - "5432:5432"
     healthcheck:
       test: "pg_isready -U postgres"
 
@@ -51,15 +51,22 @@ services:
     labels:
       org.springframework.boot.ignore: true
 
-  pgadmin-main:
-    image: dpage/pgadmin4
+  iam-api:
+    image: omidmk567/iam-aas:1.0.0
+    container_name: iam-api
     environment:
-      PGADMIN_DEFAULT_EMAIL: omidmk567@gmail.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://iam-postgres:5432/iam
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=iam-password
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - APP_IAM_AAS_KEYCLOAK_BASE_URL=http://keycloak:8080
+      - APP_IAM_AAS_KEYCLOAK_MASTER_REALM=master
+      - APP_IAM_AAS_KEYCLOAK_MASTER_USERNAME=admin
+      - APP_IAM_AAS_KEYCLOAK_MASTER_PASSWORD=admin
+      - APP_IAM_AAS_KEYCLOAK_MASTER_CLIENT_ID=admin-cli
+      - APP_IAM_AAS_KEYCLOAK_AUTH_REALM=IAM-aaS
     depends_on:
-      - keycloak-db
       - iam-api-db
+      - keycloak
     ports:
-      - '5051:80'
-    labels:
-        org.springframework.boot.ignore: true
+      - "8000:8000"
